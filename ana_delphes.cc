@@ -53,13 +53,22 @@ const double pb2fb=1000.;
 const double L_MASS=60.;//mass lower bound for bonson candidates
 const double U_MASS=110.;//mass upper bound for bonson candidates
 
-double X[NUM];//to be determined by SIG (the Xsections of all considered processes)
-double X_sig[2] = {0.0324, 0.0001134}; //1TeV, 2TeV
-double X_bg[8] = {624.4, 130.3, 1.047, 0.3969, 0.0342, 0.009666, 0.002586, 0.000148}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+double X[NUM], Err_X[NUM];//to be determined by SIG (the Xsections of all considered processes)
+//double X_sig[2] = {0.0324, 0.0001134}; //1TeV, 2TeV
+//double Err_X_sig[2] = {4.8e-05, 1.6e-07}; //1TeV, 2TeV
+//double X_bg[8] = {472.1, 130.3, 1.047, 0.3969, 0.01295, 0.009666, 0.002586, 0.0001468}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+//double Err_X_bg[8] = {11, 1.3, 0.018, 0.046, 0.0017, 3.1e-05, 2.2e-05, 3.2e-07}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+double X_sig[2] = {0.051, 0.000177}; //1TeV, 2TeV
+double Err_X_sig[2] = {0.001, 4e-06}; //1TeV, 2TeV
+double X_bg[8] = {815.96, 192.4, 1.77, 0.621, 0.0219, 0.0164, 0.00405, 0.000249}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+double Err_X_bg[8] = {45.51, 4.1, 0.10, 0.073, 0.0013, 9e-04, 9e-05, 3.4e-05}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+//double X_bg[8] = {624.4, 130.3, 1.047, 0.3969, 0.0342, 0.009666, 0.002586, 0.000148}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
+
 char *histName[13]={"Num_lep","Num_jet","PT_lep","PT_jet","tot_Lep_PT","HT","MET","ST","Num_boson","M_boson","PT_chosenJet","Eta_chosenJet","Phi_chosenJet"};
 char *processes[NUM] = {"fireball", "pptt", "ppvv", "ppvtt", "ppvvv", "ppvvtt", "pptttt", "ppvvvv", "ppvvvtt"};
 char *units[NUM_hist] = {"# of lep", "# of jet", "GeV", "GeV", "GeV", "GeV", "GeV", "GeV", "# of boson", "GeV", "GeV", "eta", "rad."};
-int color[NUM] = {kRed, kOrange+3, kOrange+1, kBlue, kCyan, kGreen+2, kGreen, kViolet+2, kMagenta};
+//int color[NUM] = {kRed, kOrange+3, kOrange+1, kBlue, kCyan, kGreen+2, kGreen, kViolet+2, kMagenta};
+int color[NUM] = {kRed, kOrange+3, kOrange+1, kBlue, kCyan, kGreen+2, kGreen, kMagenta+2, kMagenta};
 int timesStyle[4] = {20,22,24,26};//20 21 22 23:(solid) circle square triangle anti-triangle; 24 25 26 27 (hollow)~~~~
 int timesColor[5] = {kRed, kOrange+1, kGreen+1, kBlue-2, kMagenta+2};
 //int timesColor[5] = {kRed, kOrange+1, kBlue, kGreen+2, kViolet+2};
@@ -322,20 +331,25 @@ public:
 
 		//double significance = yield_sig / sqrt( yield_sig + yield_bg );
 		//if((yield_sig+yield_bg)!=0)	return -significance;
-		double significance = sqrt( 2*( (yield_sig + yield_bg)*TMath::Log(1+(yield_sig/yield_bg)) - yield_sig ) );
+		double significance;
+		if(yield_bg>1e-20) significance = sqrt( 2*( (yield_sig + yield_bg)*TMath::Log(1+(yield_sig/yield_bg)) - yield_sig ) );
+		else significance = -1;
+		hist->Fill(significance);
 
 		if(METHOD=="TMVA"){
 			COUNTER += 1;
 			std::cout<<"("<<COUNTER<<")"<<"\tsig = "<<significance<<std::endl;
 		}
 
-		if((yield_bg)!=0){
-			hist->Fill(significance);
-			return -significance;
-		}else{//denominator==0
-			hist->Fill(-1);
-			return 1;
-		}
+		//if((yield_bg)!=0){
+		//	hist->Fill(significance);
+		//	return -significance;
+		//}else{//denominator==0
+		//	hist->Fill(-1);
+		//	return 1;
+		//}
+
+		return -significance;
 
 	}//end of EstimatorFunction
 };
@@ -368,6 +382,12 @@ void DrawSettingGen(TNtuple *&ntuple, TLegend *&leg, char *text, Double_t marker
 	leg->AddEntry(ntuple,text,"lp");//lepf
 }
 void PrintSelectionCuts(std::vector<double> factors){
+	std::cout<<"factors are:";
+	for( std::vector<Double_t>::iterator it = factors.begin(); it!=factors.end(); it++)
+		std::cout<<' '<<*it; 
+	std::cout<<'\n';
+}
+void ListSelectionCuts(std::vector<double> factors){
 	int n = 0;
     for( std::vector<Double_t>::iterator it = factors.begin(); it<factors.end(); it++ ){
         std::cout << setw(11) <<histName[n] << ": " << (*it) << std::endl;
@@ -515,6 +535,8 @@ int main(int argc, char* argv[]){
 	METHOD = argv[1];// TMVA or MyGA or NoGA
 	SIG = atoi(argv[2]);
 	suffix = argv[3];
+	//if(SIG==1) savingPath = Form("/afs/cern.ch/user/y/ykao/work/fireball/03output/1TeV%s",suffix); 
+	//if(SIG==2) savingPath = Form("/afs/cern.ch/user/y/ykao/work/fireball/03output/2TeV%s",suffix); 
 	if(SIG==1) savingPath = "/afs/cern.ch/user/y/ykao/work/fireball/03output/1TeV"; 
 	if(SIG==2) savingPath = "/afs/cern.ch/user/y/ykao/work/fireball/03output/2TeV"; 
 
@@ -532,8 +554,8 @@ int main(int argc, char* argv[]){
 
 	//set cross section list
 	for(int i=0; i<NUM; i++){
-		if(i==0) X[i] = X_sig[SIG-1];
-		else X[i] = X_bg[i-1];
+		if(i==0) {X[i] = X_sig[SIG-1]; Err_X[i] = Err_X_sig[SIG-1];}
+		else {X[i] = X_bg[i-1]; Err_X[i] = Err_X_bg[i-1];}
 	}
 	
 	std::vector<double> factors;//to store the optimized selection cuts
@@ -579,7 +601,7 @@ int main(int argc, char* argv[]){
 		factors = genes->GetFactors();
     	int n = 0;
     	std::cout << "\nBest factors:" << std::endl;
-		PrintSelectionCuts(factors);//print out the Best selectionCuts!
+		ListSelectionCuts(factors);//print out the Best selectionCuts!
     	std::cout << "\nCounter = " << COUNTER << std::endl;
 	}//end of TMVA
 
@@ -638,26 +660,23 @@ int main(int argc, char* argv[]){
 		
 		factors = chromo[0];
     	std::cout << "\nBest factors:" << std::endl;
-		PrintSelectionCuts(factors);//print out the best seclectionCuts!
+		ListSelectionCuts(factors);//print out the best seclectionCuts!
 	}//end of MyGA
 
 	if(METHOD=="NoGA"){//For ploting certain set of SelectionCuts
-		double list01[9]={2,5,25,50,40,400,120,800,0};//double list01[9]={2,5,25,50,40,400,120,800,0};//double list01[7]={1,2,30,5,70,1080,50};
-		//double list02[9]={2,4,20,75,0,840,520,2550,0};//double list02[9]={2,7,65,50,20,150,60,1800,1};//double list02[7]={0,11,5,5,30,1280,20};
-		double list02[9]={2,4,30,50,420,1260,120,1500,4};//double list02[9]={2,7,65,50,20,150,60,1800,1};//double list02[7]={0,11,5,5,30,1280,20};
+		double list01[9]={2,6,30,40,20,1200,50,1400,0};
+		double list02[9]={2,6,30,40,20,1200,50,1400,0};
 		std::vector<double>::iterator it;//to store the optimized selection cuts
 		if(SIG==1) factors.insert(factors.begin(),list01,list01+9);
 		if(SIG==2) factors.insert(factors.begin(),list02,list02+9);
-		std::cout<<"factors are:";
-		for(it = factors.begin(); it!=factors.end(); it++)
-			std::cout<<' '<<*it; 
-		std::cout<<'\n';
+    	std::cout << "\nChosen factors:" << std::endl;
+		ListSelectionCuts(factors);//print out the best seclectionCuts!
 	}
 	
 	//#############################################
 	//### Ploting with the optimized selection cuts
 	//#############################################
-	TFile *fout = new TFile(Form("%s%s/result.root",savingPath,suffix),"recreate");
+	TFile *fout = new TFile(Form("%s/result.root",savingPath),"recreate");
 	TCanvas *can = new TCanvas("can","",800,600);
 	SetStyle();
 	TH1D *hist_Ori[NUM_hist][NUM];//before cuts 
@@ -668,14 +687,14 @@ int main(int argc, char* argv[]){
 	THStack *hist_Stack_Cut[NUM_CUT];//after cuts 
 	THStack *hist_Stack_Copy[NUM_CUT];//before cuts 
 
-	int    n_bin_ori[2][NUM_hist]={{10,40,80,70,60,125,60,150,12,U_MASS-L_MASS,60,16,16},
-								   {10,40,100,100,50,35,75,40,12,U_MASS-L_MASS,100,16,16}};
+	int    n_bin_ori[2][NUM_hist]={{10,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
+								   {10,40,50,50,50,35,50,40,12,U_MASS-L_MASS,100,16,16}};
 	double l_bin_ori[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
 								   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
 	double h_bin_ori[2][NUM_hist]={{10,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
 								   {10,40,1000,2000,1000,7000,1500,8000,12,U_MASS,1600,8,8}};
-	int    n_bin_cut[2][NUM_hist]={{ 8,40,80,70,60,125,60,150,12,U_MASS-L_MASS,60,16,16},
-								   {12,40,100,100,100,110,75,160,12,U_MASS-L_MASS,100,16,16}};
+	int    n_bin_cut[2][NUM_hist]={{ 8,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
+								   {12,40,50,50,50,50,50,50,12,U_MASS-L_MASS,100,16,16}};
 	double l_bin_cut[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
 								   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
 	double h_bin_cut[2][NUM_hist]={{ 8,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
@@ -684,7 +703,9 @@ int main(int argc, char* argv[]){
 	if(SIG==1)	{scaleBosonMass = 20000, scaleChosenJetEta = 20000, scaleChosenJetPhi = 200000, scaleLepSPT = 1000;}
 	if(SIG==2)  {scaleBosonMass = 500, scaleChosenJetEta = 10000, scaleChosenJetPhi = 5000, scaleLepSPT = 1000;}
 
+	//printf("4.0: %s\n",savingPath);
 	for(int k=0; k<NUM_hist; k++){//loop over physical quantities
+		//printf("4.0.%d: %s\n",k,savingPath);
 		for(int i=0; i<NUM; i++){//loop over processes
 			hist_Ori[k][i]       = new TH1D(Form("%s_Ori_%s"    ,processes[i],histName[k]),"",n_bin_ori[SIG-1][k] ,l_bin_ori[SIG-1][k] ,h_bin_ori[SIG-1][k]);
 			hist_Cut[k][i]       = new TH1D(Form("%s_Cut_%s"    ,processes[i],histName[k]),"",n_bin_ori[SIG-1][k] ,l_bin_ori[SIG-1][k] ,h_bin_ori[SIG-1][k]);
@@ -706,13 +727,15 @@ int main(int argc, char* argv[]){
 		}
 	}
 	
+	//printf("4.1: %s\n",savingPath);
+	
 	//### Loop over "Full Cut" & "N-1 Cuts"
 	double CUT[NUM_CUT];
 	for(int N=0; N<NUM_CUT+1; N++){
 		if(N==0) for(int k=0; k<NUM_CUT; k++) CUT[k] = factors.at(k);//for full cut
 		else{//for N-1 Cuts
 			for(int k=0; k<NUM_CUT; k++){
-				if(k==N) CUT[k] = 0.;
+				if(k==N-1) CUT[k] = 0.;
 				else CUT[k] = factors.at(k);
 			}
 		}
@@ -726,9 +749,10 @@ int main(int argc, char* argv[]){
 		double CUT_ST		 = CUT[7];
 		double CUT_Num_boson = CUT[8];
 	
-		double eff[NUM], yield[NUM];
-		double count[NUM];
-		for(int i=0; i<NUM; i++)	count[i]=0.;
+		double eff[NUM], yield[NUM], Err_eff[NUM], Err_yield[NUM];
+		double count[NUM]={0.};
+		int TagDieOut[NUM]={0};
+		//for(int i=0; i<NUM; i++)	count[i]=0.;
 		
 		//### Loop over different processes
 		std::vector<MyEvent> vec;
@@ -789,7 +813,7 @@ int main(int argc, char* argv[]){
 				for(int i=0; i<PT_lep.size(); i++) hist_Ori[2][k] -> Fill(PT_lep.at(i),weighting);
 				for(int i=0; i<PT_jet.size(); i++) hist_Ori[3][k] -> Fill(PT_jet.at(i),weighting);
 				for(int i=0; i<MASS_boson.size(); i++)    hist_Ori[9][k]  -> Fill(MASS_boson.at(i),weighting);
-				for(int i=0; i<PT_chosenJet.size(); i++)  hist_Ori[10][k]  -> Fill(PT_chosenJet.at(i),weighting);
+				for(int i=0; i<PT_chosenJet.size(); i++)  hist_Ori[10][k] -> Fill(PT_chosenJet.at(i),weighting);
 				for(int i=0; i<Eta_chosenJet.size(); i++) hist_Ori[11][k] -> Fill(Eta_chosenJet.at(i),weighting);
 				for(int i=0; i<Phi_chosenJet.size(); i++) hist_Ori[12][k] -> Fill(Phi_chosenJet.at(i),weighting);
 
@@ -812,7 +836,7 @@ int main(int argc, char* argv[]){
 					for(int i=0; i<PT_lep.size(); i++) if(PT_lep.at(i) > CUT_PT_lep) hist_Cut[2][k] -> Fill(PT_lep.at(i),weighting);
 					for(int i=0; i<PT_jet.size(); i++) if(PT_jet.at(i) > CUT_PT_jet) hist_Cut[3][k] -> Fill(PT_jet.at(i),weighting);
 					for(int i=0; i<MASS_boson.size(); i++)    hist_Cut[9][k]  -> Fill(MASS_boson.at(i),weighting);
-					for(int i=0; i<PT_chosenJet.size(); i++)  hist_Cut[10][k]  -> Fill(PT_chosenJet.at(i),weighting);
+					for(int i=0; i<PT_chosenJet.size(); i++)  hist_Cut[10][k] -> Fill(PT_chosenJet.at(i),weighting);
 					for(int i=0; i<Eta_chosenJet.size(); i++) hist_Cut[11][k] -> Fill(Eta_chosenJet.at(i),weighting);
 					for(int i=0; i<Phi_chosenJet.size(); i++) hist_Cut[12][k] -> Fill(Phi_chosenJet.at(i),weighting);
 					count[k] += 1.;
@@ -832,21 +856,46 @@ int main(int argc, char* argv[]){
 					if(N-1==12) for(int i=0; i<Phi_chosenJet.size(); i++) hist_Nm1_Plot[12][k] -> Fill(Phi_chosenJet.at(i),weighting);
 				}
 			}//end of iterator over events
+			if(count[k]==0) {count[k]=1; TagDieOut[k]=1; } // to estimate the upper bound of yield for zero-count processes
 			eff[k] = count[k] / (double)vec.size(); 
+			Err_eff[k] = sqrt( eff[k]*(1-eff[k])/ (double)vec.size() );
 			yield[k] = L*pb2fb*X[k]*eff[k]; 
+			Err_yield[k] = sqrt( pow(Err_X[k]/X[k],2) + pow(Err_eff[k]/eff[k],2) )*yield[k];//relative_err times yield
 		}//end of k over different processes
 
 		if(N==0){//for full cut
 			double yield_sig = yield[0];
 			double yield_bg = 0.;
-			std::cout<<"yield of sig"<<" = "<<yield[0]<<std::endl;
-			for(int i=0; i<num_bg; i++){
-				std::cout<<"yield of bg"<<i<<" = "<<yield[i+1]<<std::endl;
-				yield_bg += yield[i+1];
+			for(int k=0; k<NUM; k++){
+				if(TagDieOut[k]==0){
+					std::cout<<setw(10)<<processes[k]<<"\tyield = "<<setw(10)<<yield[k]<<" +/- "<<setw(10)<<Err_yield[k]
+							 <<"("<<setw(8)<<(Err_yield[k]/yield[k])*100<<"%)"
+							 <<"\tSurvived events = "<<setw(5)<<count[k]<<" +/- "<<setw(10)<<sqrt(count[k]*(1-eff[k]))
+							 <<"("<<setw(10)<<eff[k]*sqrt((1-eff[k])/count[k])*100<<"%)"
+							 <<"\teff = "<<setw(10)<<eff[k]<<" +/- "<<setw(10)<<Err_eff[k]<<"("<<Err_eff[k]/eff[k]*100<<"%)"<<std::endl;
+				} else if(TagDieOut[k]==1){
+					std::cout<<setw(10)<<processes[k]<<"\tyield < "<<setw(10)<<yield[k]<<" +/- "<<setw(10)<<Err_yield[k]
+							 <<"("<<setw(8)<<(Err_yield[k]/yield[k])*100<<"%)"
+							 <<"\tSurvived events < "<<setw(5)<<count[k]<<" +/- "<<setw(10)<<sqrt(count[k]*(1-eff[k]))
+							 <<"("<<setw(10)<<eff[k]*sqrt((1-eff[k])/count[k])*100<<"%)"
+							 <<"\teff < "<<setw(10)<<eff[k]<<" +/- "<<setw(10)<<Err_eff[k]<<"("<<Err_eff[k]/eff[k]*100<<"%)"<<std::endl;
+				}
+				if(k!=0) yield_bg += yield[k];
 			}
-			double significance = yield_sig / sqrt( yield_sig + yield_bg );
-			//double significance = sqrt( 2*( (yield_sig + yield_bg)*TMath::Log(1+(yield_sig/yield_bg)) - yield_sig ) );
-			std::cout<<"significance = "<<significance<<std::endl;
+			//double significance = yield_sig / sqrt( yield_sig + yield_bg );
+			printf("\nyield_sig = %f, yield_bg = %f\n",yield_sig,yield_bg);
+			double significance = sqrt( 2*( (yield_sig + yield_bg)*TMath::Log(1+(yield_sig/yield_bg)) - yield_sig ) );
+			std::cout<<"significance_worst = "<<significance<<std::endl;
+
+			//calculate significance with yield = 0 processes
+			for(int k=1; k<NUM; k++){
+				printf("(%d) TagDieOut = %d\t",k,TagDieOut[k]);
+				if(TagDieOut[k]==1) yield_bg -= yield[k];
+			}
+			printf("\nyield_sig = %f, yield_bg = %f\n",yield_sig,yield_bg);
+			significance = sqrt( 2*( (yield_sig + yield_bg)*TMath::Log(1+(yield_sig/yield_bg)) - yield_sig ) );
+			std::cout<<"significance_pure = "<<significance<<std::endl;
+
 		} else{//for N-1 cuts
 			CutLine[N-1] = new TLine(factors.at(N-1),0,factors.at(N-1),1000);
 			CutLine[N-1]->SetLineWidth(3);
@@ -860,15 +909,16 @@ int main(int argc, char* argv[]){
 		TPad *pad;
 		if(i==0 || i==1) pad = new TPad("pad","",0.38,0.38,0.9,0.898,-1,-1,0);
 		else			 pad = new TPad("pad","",0.32,0.32,0.9,0.898,-1,-1,0);
-		TLegend *legend_ori = new TLegend(0.72,0.5,0.9,0.9);
-		TLegend *legend_cut = new TLegend(0.72,0.5,0.9,0.9);
+		TLegend *legend_ori = new TLegend(0.74,0.5,0.9,0.9);
+		TLegend *legend_cut = new TLegend(0.74,0.5,0.9,0.9);
 
 		//Num_lep, Num_jet, PT_lep, PT_jet, SPT_lep, SPT_jet, TOT_MET, Num_Boson, M_Boson, PT_cjet, Eta_cjet, Phi_cjet
 		double binWidth;
-		double scaleOri[2][NUM_CUT] = {{1e+4, 1e+4, 1e+3, 1e+4, 100, 1e+3, 100, 1e+4, 1e+4},
-								 	   {100, 100, 100, 100, 10, 100, 10, 500, 10}};
+		double scaleOri[2][NUM_CUT] = {{5e+4, 1e+4, 5e+3, 5e+4, 100, 8e+3, 100, 1e+4, 5e+4},
+								 	   {3e+4, 5e+3, 100, 500, 10, 1e+4, 1e+4, 1e+4, 3e+4}};
 		double scaleCut[2][NUM_CUT] = {{1e+4, 60, 40, 400, 100, 100, 100, 200, 200},
 								 	   {100, 10, 10, 10, 10, 10, 10, 10, 10}};
+
 
 		for(int i_proc=0; i_proc<NUM; i_proc++){
 			DrawSetting(hist_Ori[i][i_proc], legend_ori, processes[i_proc], histName[i], units[i], "entries", 1001, color[i_proc]);
@@ -887,7 +937,7 @@ int main(int argc, char* argv[]){
 		gPad->SetLogy();
 		//if(SIG==2 && i==6) hist_Stack_Ori[i]->SetMinimum(0.0001);
 		hist_Stack_Ori[i]->Draw();
-		if(( (SIG==1 && !(i==4 || i==6)) || (SIG==2 && !(i==4)) )){//zoom-in plot
+		if(( (SIG==1 && !(i==2 || i==3 || i==4 || i==6)) || (SIG==2 && !(i==2 || i==3 || i==4 )) )){//zoom-in plot
 			pad->Draw();
 			pad->cd();
 			gPad->SetLogy();
@@ -912,7 +962,7 @@ int main(int argc, char* argv[]){
 
 	hist->Draw();
 	can->SaveAs(Form("%s%s/png/AppearedSignificance.png",savingPath,suffix));
-	//can->SaveAs(Form("%s%s/png/EvolutionTMVA.png",savingPath,suffix));
+	can->SaveAs(Form("%s%s/png/EvolutionTMVA.png",savingPath,suffix));
 
 	fout->Write();
 	fout->Close();
