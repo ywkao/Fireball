@@ -11,7 +11,7 @@ if [ $?==0 ];then #why this does NOT work when failing to make??
 	./reset.sh ${SUFFIX}
 	cd ${analysisPath}
 	
-	for ENE in 1 #2
+	for ENE in 1 2
 	do
 		./ana_delphes ${METHOD} ${ENE} ${SUFFIX} >> LOG_${ENE}TeV
 	done

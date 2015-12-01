@@ -10,19 +10,20 @@ CXXFLAGS = $(shell root-config --cflags) -Wno-write-strings -D_FILE_OFFSET_BITS=
 DELPHES_LIBS = $(shell root-config --libs) -lEG -L../ -lDelphes
 LIBS    = $(shell root-config --libs) -lTMVA -lMLP -lTreePlayer -lMinuit
 
-BINS = ana_delphes
+BINS = ana_delphes_bg
+OBJS = ana_delphes_bg.o
 
 all: $(BINS)
 
 clean:
-	rm -f $(BINS)
+	rm -f $(BINS) $(OBJS)
 
 #all:
 $(BINS): % : %.cc 
 	@echo "Building $@ ... "
 	#$(CXX) $(CCFLAGS) $< $(INCLUDE) $(LIBS) -g -o $@
-	g++ -c ana_delphes.cc $(CXXFLAGS)
-	g++ -o ana_delphes ana_delphes.o $(LDFLAGS) $(DELPHES_LIBS) $(LIBS)
+	g++ -c ana_delphes_bg.cc $(CXXFLAGS)
+	g++ -o ana_delphes_bg ana_delphes_bg.o $(LDFLAGS) $(DELPHES_LIBS) $(LIBS)
 	@echo "Done"
 
 
