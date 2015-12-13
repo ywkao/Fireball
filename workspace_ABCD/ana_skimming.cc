@@ -270,8 +270,8 @@ int main(int argc, char* argv[]){
 				title = Form("%s;GeV;Entries / 125 GeV",Label[2*i+j]);
 				histST[k][i][j]	    = new TH1D(Form("histST_%s%d%d"	   ,CutTag[k],i,j),title,Nbins,0,5000); histST[k][i][j]	->Sumw2();
 				histHT[k][i][j]	    = new TH1D(Form("histHT_%s%d%d"	   ,CutTag[k],i,j),title,Nbins,0,5000); histHT[k][i][j]	->Sumw2();
-				histLPT[k][i][j]    = new TH1D(Form("histLPT_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,2500); histLPT[k][i][j]->Sumw2();
-				histMET[k][i][j]    = new TH1D(Form("histMET_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,2500); histMET[k][i][j]->Sumw2();
+				histLPT[k][i][j]    = new TH1D(Form("histLPT_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,1200); histLPT[k][i][j]->Sumw2();
+				histMET[k][i][j]    = new TH1D(Form("histMET_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,1200); histMET[k][i][j]->Sumw2();
 				title = Form("%s;# of jets;Entries",Label[2*i+j]);
 				histNumJet[k][i][j] = new TH1D(Form("histNumJet_%s%d%d",CutTag[k],i,j),title,Nbins,0,25)  ; histNumJet[k][i][j]->Sumw2();
 			}
