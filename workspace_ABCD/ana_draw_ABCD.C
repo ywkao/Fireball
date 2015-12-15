@@ -17,6 +17,7 @@ using namespace std;
 //importEvents(vec,"/home/xiaokao/Desktop/work_ABCD/skimmed/simulation_delphes_pptt_skimmed.root");
 
 void ana_draw_ABCD(){
+	LOGFile = fopen("INFOLOG","w+"); fclose(LOGFile);// write/update file, to empty the previous content
 	std::vector<MyProcess> vec;//to store spectrum for each bg process
 	importEvents(vec,"ppttvvv");
 	importEvents(vec,"ppvvvv");
@@ -27,7 +28,7 @@ void ana_draw_ABCD(){
 	importEvents(vec,"ppvv");
 	importEvents(vec,"pptt");
 
-	quickCheck(vec.at(0).HT); //system("PAUSE");
+	//quickCheck(vec.at(0).HT); //system("PAUSE");
 	//quickCheck(vec.at(1).HT); //system("PAUSE");
 	//quickCheck(vec.at(2).HT); //system("PAUSE");
 	//quickCheck(vec.at(3).HT); //system("PAUSE");

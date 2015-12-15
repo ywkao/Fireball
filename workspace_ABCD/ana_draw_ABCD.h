@@ -1,4 +1,5 @@
-#include <iostream>
+#include <stdio.h> //FILE
+#include <iostream> //cout
 #include <TCollection.h>
 #include <TFile.h>
 #include <TGraphAsymmErrors.h>
@@ -19,12 +20,11 @@ const double ppttvv  = 0.0219   ,Err_ppttvv  = 0.0013;
 const double pptttt  = 0.0164   ,Err_pptttt  = 9e-04;
 const double ppvvvv  = 0.00405  ,Err_ppvvvv  = 9e-05;
 const double ppttvvv = 0.000249 ,Err_ppttvvv = 3.4e-05;
-//const char  *PREFIX	 = "/home/xiaokao/Desktop/work_ABCD/skimmed/simulation_delphes";
-//const char  *SUFFIX	 = "skimmed.root";
-const char  *PREFIX	 = "/afs/cern.ch/user/y/ykao/work/Fireball/workspace_ABCD/skimmed/simulation_delphes";
+const char  *PREFIX	 = "/home/xiaokao/Desktop/work_ABCD/skimmed/simulation_delphes";
 const char  *SUFFIX	 = "skimmed.root";
 //const char  *TAG	 = "woPTcut";
 const char  *TAG	 = "PTcut";
+FILE *LOGFile;
 
 int color[8] = {kOrange+3, kOrange+1, kBlue, kCyan, kGreen+2, kGreen, kMagenta+2, kMagenta};
 using namespace std;
@@ -66,7 +66,8 @@ public:
 	double A, B, C, D;
 	double errhA, errhB, errhC, errhD;
 	double errlA, errlB, errlC, errlD;
-	//NEED TO CALCULATE BINOMIAL ERROR?: sqrt(N*eff*(1-eff))=sqrt(A*(1-eff))
+	double biErrA, biErrB, biErrC, biErrD;//BINOMIAL ERROR: sqrt(N*eff*(1-eff))=sqrt(A*(1-eff))
+	double pErrA, pErrB, pErrC, pErrD;//Poisson ERROR: sqrt(N*eff*(1-eff))=sqrt(A*(1-eff))
 };
 class MySpectrum {
 public:
@@ -99,25 +100,15 @@ public:
 	MySpectrumCombined ST, HT, LPT, MET, NumJet;
 	TH2D *NjvsNl, *HTvsMET;// HAVE TO BE SCALED
 };
-class SpectrumClone {//To solve uninitailized problem
-public:
-	SpectrumClone(MySpectrum &mySpectrum, MySpectrum targetSpectrum){
-		mySpectrum.yA = (TH1D*)targetSpectrum.yA->Clone();
-		mySpectrum.yB = (TH1D*)targetSpectrum.yB->Clone();
-		mySpectrum.yC = (TH1D*)targetSpectrum.yC->Clone();
-		mySpectrum.yD = (TH1D*)targetSpectrum.yD->Clone();
-	}
-	SpectrumClone(MySpectrumCombined &mySpectrum, MySpectrumCombined targetSpectrum){
-		mySpectrum.yA = (TH1D*)targetSpectrum.yA->Clone(); mySpectrum.stackA = (THStack*)targetSpectrum.stackA->Clone();
-		mySpectrum.yB = (TH1D*)targetSpectrum.yB->Clone(); mySpectrum.stackB = (THStack*)targetSpectrum.stackB->Clone();
-		mySpectrum.yC = (TH1D*)targetSpectrum.yC->Clone(); mySpectrum.stackC = (THStack*)targetSpectrum.stackC->Clone();
-		mySpectrum.yD = (TH1D*)targetSpectrum.yD->Clone(); mySpectrum.stackD = (THStack*)targetSpectrum.stackD->Clone();
-	}
-};
 
-//#############################################
-//### Functions for importing bkg processes
-//#############################################
+//#################################################
+//### Functions for individual & combined processes
+//#################################################
+void INFOLOG(const char *message){
+	LOGFile = fopen("INFOLOG","a");
+	fputs(Form("%s\n",message),LOGFile);
+	fclose(LOGFile);
+}
 double GetMax(const char* Name){
 	if(Name=="ST"	 ) return 5000;
 	if(Name=="HT"	 ) return 5000;
@@ -134,6 +125,38 @@ const char* GetUnit(const char* Name){
 	if(Name=="NumJet") return "# of Jets";
 }
 
+void RecordYield(const char* SpectrumName, MyYield yield){
+	INFOLOG(SpectrumName);
+	char *message; double errh, errl, biErr, pErr, ratio;
+	//message=Form("yield A = %10.3f +%8.3f%% -%8.3f%% \u00B1 %5.3f", yield.A, yield.errhA/yield.A*100, yield.errlA/yield.A*100, yield.biErrA); INFOLOG(message);
+	//message=Form("yield B = %10.3f +%8.3f%% -%8.3f%% \u00B1 %5.3f", yield.B, yield.errhB/yield.B*100, yield.errlB/yield.B*100, yield.biErrB); INFOLOG(message);
+	//message=Form("yield C = %10.3f +%8.3f%% -%8.3f%% \u00B1 %5.3f", yield.C, yield.errhC/yield.C*100, yield.errlC/yield.C*100, yield.biErrC); INFOLOG(message);
+	//message=Form("yield D = %10.3f +%8.3f%% -%8.3f%% \u00B1 %5.3f", yield.D, yield.errhD/yield.D*100, yield.errlD/yield.D*100, yield.biErrD); INFOLOG(message);
+	message=Form("yield A = %10.3f \u00B1 %5.3f", yield.A, yield.pErrA); INFOLOG(message);
+	message=Form("yield B = %10.3f \u00B1 %5.3f", yield.B, yield.pErrB); INFOLOG(message);
+	message=Form("yield C = %10.3f \u00B1 %5.3f", yield.C, yield.pErrC); INFOLOG(message);
+	message=Form("yield D = %10.3f \u00B1 %5.3f", yield.D, yield.pErrD); INFOLOG(message);
+
+	ratio = yield.A/yield.B;
+	errh = sqrt( pow(yield.errhA/yield.B,2) + pow(yield.errhB*yield.A/pow(yield.B,2),2) );
+	errl = sqrt( pow(yield.errlA/yield.B,2) + pow(yield.errlB*yield.A/pow(yield.B,2),2) );
+	biErr= sqrt( pow(yield.biErrA/yield.B,2) + pow(yield.biErrB*yield.A/pow(yield.B,2),2) );
+	pErr = sqrt( pow(yield.pErrA/yield.B,2) + pow(yield.pErrB*yield.A/pow(yield.B,2),2) );
+	//message=Form("A/B = %7.3f +%7.3f -%7.3f \u00B1 %10.8f ", ratio, errh, errl, biErr); INFOLOG(message);//\u00B1 = ${pm}
+	message=Form("A/B = %7.3f \u00B1 %10.8f ", ratio, pErr); INFOLOG(message);//\u00B1 = ${pm}
+
+	ratio = yield.D/yield.C;
+	errh = sqrt( pow(yield.errhD/yield.C,2) + pow(yield.errhC*yield.D/pow(yield.C,2),2) );
+	errl = sqrt( pow(yield.errlD/yield.C,2) + pow(yield.errlC*yield.D/pow(yield.C,2),2) );
+	biErr= sqrt( pow(yield.biErrD/yield.C,2) + pow(yield.biErrC*yield.D/pow(yield.C,2),2) );
+	pErr = sqrt( pow(yield.pErrD/yield.C,2) + pow(yield.pErrC*yield.D/pow(yield.C,2),2) );
+	//message=Form("D/C = %7.3f +%7.3f -%7.3f \u00B1 %10.8f\n", ratio, errh, errl, biErr); INFOLOG(message);
+	message=Form("D/C = %7.3f \u00B1 %10.8f\n", ratio, pErr); INFOLOG(message);
+}
+
+//#############################################
+//### Functions for importing bkg processes
+//#############################################
 void Initialization(const char* Name, MySpectrum &spectrum){
 	spectrum.Name = Name;
 	spectrum.yA = new TH1D(Form("hist%s_A",Name),"",Nbin,0,GetMax(Name)); spectrum.yA->Sumw2(); 
@@ -145,13 +168,13 @@ void Initialization(const char* Name, MySpectrum &spectrum){
 	spectrum.gB = new TGraphAsymmErrors(Nbin);
 	spectrum.gC = new TGraphAsymmErrors(Nbin);
 	spectrum.gD = new TGraphAsymmErrors(Nbin);
-	spectrum.yield.A=0.; spectrum.yield.errhA=0.; spectrum.yield.errlA=0.;
-	spectrum.yield.B=0.; spectrum.yield.errhB=0.; spectrum.yield.errlB=0.;
-	spectrum.yield.C=0.; spectrum.yield.errhC=0.; spectrum.yield.errlC=0.;
-	spectrum.yield.D=0.; spectrum.yield.errhD=0.; spectrum.yield.errlD=0.;
+	spectrum.yield.A=0.; spectrum.yield.errhA=0.; spectrum.yield.errlA=0.; spectrum.yield.biErrA=0.; spectrum.yield.pErrA=0.;
+	spectrum.yield.B=0.; spectrum.yield.errhB=0.; spectrum.yield.errlB=0.; spectrum.yield.biErrB=0.; spectrum.yield.pErrB=0.;
+	spectrum.yield.C=0.; spectrum.yield.errhC=0.; spectrum.yield.errlC=0.; spectrum.yield.biErrC=0.; spectrum.yield.pErrC=0.;
+	spectrum.yield.D=0.; spectrum.yield.errhD=0.; spectrum.yield.errlD=0.; spectrum.yield.biErrD=0.; spectrum.yield.pErrD=0.;
 }
 
-void CalculateYield(TGraphAsymmErrors *&graph, TH1D *&hist, double &yield, double &errl, double &errh, double factor){
+void CalculateYieldAndBayesError(TGraphAsymmErrors *&graph, TH1D *&hist, double &yield, double &errl, double &errh, double factor){
 	for(int i=0; i < graph->GetN();i++){
 		double x,y;
 		graph->GetPoint(i,x,y);
@@ -165,8 +188,21 @@ void CalculateYield(TGraphAsymmErrors *&graph, TH1D *&hist, double &yield, doubl
 		errl  = sqrt(errl);
 		errh  = sqrt(errh);
 }
+void CalculateBinomialError(MyYield &yield){
+	double eff, tot = yield.A + yield.B + yield.C + yield.D;
+	eff = yield.A/tot; yield.biErrA = sqrt(yield.A*(1-eff));
+	eff = yield.B/tot; yield.biErrB = sqrt(yield.B*(1-eff));
+	eff = yield.C/tot; yield.biErrC = sqrt(yield.C*(1-eff));
+	eff = yield.D/tot; yield.biErrD = sqrt(yield.D*(1-eff));
+}
+void CalculatePoissonError(MyYield &yield){
+	yield.pErrA = sqrt(yield.A);
+	yield.pErrB = sqrt(yield.B);
+	yield.pErrC = sqrt(yield.C);
+	yield.pErrD = sqrt(yield.D);
+}
 
-void CalculateBayesErrors(const char* SpectrumName, MySpectrum &spectrum, double factor){
+void CalculateEachRegion(const char* SpectrumName, MySpectrum &spectrum, double factor){
 	Initialization(SpectrumName,spectrum);
 	spectrum.ABCD->Add(spectrum.A);
 	spectrum.ABCD->Add(spectrum.B);
@@ -178,10 +214,14 @@ void CalculateBayesErrors(const char* SpectrumName, MySpectrum &spectrum, double
 	spectrum.gC->BayesDivide(spectrum.C,spectrum.ABCD);
 	spectrum.gD->BayesDivide(spectrum.D,spectrum.ABCD);
 
-	CalculateYield(spectrum.gA, spectrum.yA, spectrum.yield.A, spectrum.yield.errlA, spectrum.yield.errhA, factor);
-	CalculateYield(spectrum.gB, spectrum.yB, spectrum.yield.B, spectrum.yield.errlB, spectrum.yield.errhB, factor);
-	CalculateYield(spectrum.gC, spectrum.yC, spectrum.yield.C, spectrum.yield.errlC, spectrum.yield.errhC, factor);
-	CalculateYield(spectrum.gD, spectrum.yD, spectrum.yield.D, spectrum.yield.errlD, spectrum.yield.errhD, factor);
+	CalculateYieldAndBayesError(spectrum.gA, spectrum.yA, spectrum.yield.A, spectrum.yield.errlA, spectrum.yield.errhA, factor);
+	CalculateYieldAndBayesError(spectrum.gB, spectrum.yB, spectrum.yield.B, spectrum.yield.errlB, spectrum.yield.errhB, factor);
+	CalculateYieldAndBayesError(spectrum.gC, spectrum.yC, spectrum.yield.C, spectrum.yield.errlC, spectrum.yield.errhC, factor);
+	CalculateYieldAndBayesError(spectrum.gD, spectrum.yD, spectrum.yield.D, spectrum.yield.errlD, spectrum.yield.errhD, factor);
+	CalculateBinomialError(spectrum.yield);
+	CalculatePoissonError(spectrum.yield);
+
+	RecordYield(SpectrumName, spectrum.yield);
 }
 
 void importEvents(std::vector<MyProcess> &vec, const char* NAME){
@@ -189,7 +229,7 @@ void importEvents(std::vector<MyProcess> &vec, const char* NAME){
 	TFile *fin = new TFile(inputFile);
 
 	MyProcess process;
-	process.Name = NAME;
+	process.Name = NAME; INFOLOG(Form("### %s ###",NAME));
 	process.factor = L*pb2fb*X.GetCrossSection(NAME);
 	process.ST.A = (TH1D*) fin->Get(Form("histST_%s01",TAG)); process.LPT.A = (TH1D*) fin->Get(Form("histLPT_%s01",TAG));
 	process.ST.B = (TH1D*) fin->Get(Form("histST_%s00",TAG)); process.LPT.B = (TH1D*) fin->Get(Form("histLPT_%s00",TAG));
@@ -204,11 +244,11 @@ void importEvents(std::vector<MyProcess> &vec, const char* NAME){
 	process.NjvsNl  = (TH2D*) fin->Get(Form("hist_NjvsNl_%s",TAG));
 	process.HTvsMET = (TH2D*) fin->Get(Form("hist_HTvsMET_%s",TAG));
 
-	CalculateBayesErrors("ST",process.ST,process.factor);
-	CalculateBayesErrors("HT",process.HT,process.factor);
-	CalculateBayesErrors("LPT",process.LPT,process.factor);
-	CalculateBayesErrors("MET",process.MET,process.factor);
-	CalculateBayesErrors("NumJet",process.NumJet,process.factor);
+	CalculateEachRegion("ST",process.ST,process.factor);
+	CalculateEachRegion("HT",process.HT,process.factor);
+	CalculateEachRegion("LPT",process.LPT,process.factor);
+	CalculateEachRegion("MET",process.MET,process.factor);
+	CalculateEachRegion("NumJet",process.NumJet,process.factor);
 
 	vec.push_back(process);
 }
@@ -235,12 +275,12 @@ void InitializationCombined(const char* Name, MySpectrumCombined &spectrum){
 	spectrum.gD = new TGraphAsymmErrors(Nbin);
 	spectrum.gExpected = new TGraphAsymmErrors(Nbin);
 
-	spectrum.yield.A=0.; spectrum.yield.errhA=0.; spectrum.yield.errlA=0.;
-	spectrum.yield.B=0.; spectrum.yield.errhB=0.; spectrum.yield.errlB=0.;
-	spectrum.yield.C=0.; spectrum.yield.errhC=0.; spectrum.yield.errlC=0.;
-	spectrum.yield.D=0.; spectrum.yield.errhD=0.; spectrum.yield.errlD=0.;
+	spectrum.yield.A=0.; spectrum.yield.errhA=0.; spectrum.yield.errlA=0.; spectrum.yield.biErrA=0.; spectrum.yield.pErrA=0.;
+	spectrum.yield.B=0.; spectrum.yield.errhB=0.; spectrum.yield.errlB=0.; spectrum.yield.biErrB=0.; spectrum.yield.pErrB=0.;
+	spectrum.yield.C=0.; spectrum.yield.errhC=0.; spectrum.yield.errlC=0.; spectrum.yield.biErrC=0.; spectrum.yield.pErrC=0.;
+	spectrum.yield.D=0.; spectrum.yield.errhD=0.; spectrum.yield.errlD=0.; spectrum.yield.biErrD=0.; spectrum.yield.pErrD=0.;
 }
-void HistIndividualSpectrumCombined(MySpectrum &itSpectrum, MySpectrumCombined &sumSpectrum){
+void HistCombineIndividualSpectrum(MySpectrum &itSpectrum, MySpectrumCombined &sumSpectrum){
 	sumSpectrum.stackA->Add(itSpectrum.yA); sumSpectrum.yA->Add(itSpectrum.yA); sumSpectrum.gA->DoMerge(itSpectrum.gA);
 	sumSpectrum.stackB->Add(itSpectrum.yB); sumSpectrum.yB->Add(itSpectrum.yB); sumSpectrum.gB->DoMerge(itSpectrum.gB);
 	sumSpectrum.stackC->Add(itSpectrum.yC); sumSpectrum.yC->Add(itSpectrum.yC); sumSpectrum.gC->DoMerge(itSpectrum.gC);
@@ -249,6 +289,16 @@ void HistIndividualSpectrumCombined(MySpectrum &itSpectrum, MySpectrumCombined &
 	sumSpectrum.yield.B+=itSpectrum.yield.B; sumSpectrum.yield.errhB+=pow(itSpectrum.yield.errhB,2); sumSpectrum.yield.errlB+=pow(itSpectrum.yield.errlB,2);
 	sumSpectrum.yield.C+=itSpectrum.yield.C; sumSpectrum.yield.errhC+=pow(itSpectrum.yield.errhC,2); sumSpectrum.yield.errlC+=pow(itSpectrum.yield.errlC,2);
 	sumSpectrum.yield.D+=itSpectrum.yield.D; sumSpectrum.yield.errhD+=pow(itSpectrum.yield.errhD,2); sumSpectrum.yield.errlD+=pow(itSpectrum.yield.errlD,2);
+	sumSpectrum.yield.biErrA+=pow(itSpectrum.yield.biErrA,2); sumSpectrum.yield.pErrA+=pow(itSpectrum.yield.pErrA,2);
+	sumSpectrum.yield.biErrB+=pow(itSpectrum.yield.biErrB,2); sumSpectrum.yield.pErrB+=pow(itSpectrum.yield.pErrB,2);
+	sumSpectrum.yield.biErrC+=pow(itSpectrum.yield.biErrC,2); sumSpectrum.yield.pErrC+=pow(itSpectrum.yield.pErrC,2);
+	sumSpectrum.yield.biErrD+=pow(itSpectrum.yield.biErrD,2); sumSpectrum.yield.pErrD+=pow(itSpectrum.yield.pErrD,2);
+}
+void HistCombinedErrorCalculation(MyYield &yield){
+	yield.errhA = sqrt(yield.errhA); yield.errlA = sqrt(yield.errlA); yield.biErrA = sqrt(yield.biErrA); yield.pErrA = sqrt(yield.pErrA);
+	yield.errhB = sqrt(yield.errhB); yield.errlB = sqrt(yield.errlB); yield.biErrB = sqrt(yield.biErrB); yield.pErrB = sqrt(yield.pErrB);
+	yield.errhC = sqrt(yield.errhC); yield.errlC = sqrt(yield.errlC); yield.biErrC = sqrt(yield.biErrC); yield.pErrC = sqrt(yield.pErrC);
+	yield.errhD = sqrt(yield.errhD); yield.errlD = sqrt(yield.errlD); yield.biErrD = sqrt(yield.biErrD); yield.pErrD = sqrt(yield.pErrD);
 }
 void HistCombined(std::vector<MyProcess> vec, MyProcessCombined &sum){
 	InitializationCombined("ST", sum.ST);
@@ -257,24 +307,34 @@ void HistCombined(std::vector<MyProcess> vec, MyProcessCombined &sum){
 	InitializationCombined("MET", sum.MET);
 	InitializationCombined("NumJet", sum.NumJet);
 
-	sum.NjvsNl  = new TH2D(Form("hist_NjvsNl_%s",TAG) ,";# of lep;# of jet",7,0,7,25,0,25);                sum.NjvsNl ->Sumw2();
-	sum.HTvsMET = new TH2D(Form("hist_HTvsMET_%s",TAG),";MET [60 GeV]; HT [250 GeV]",20,0,1200,20,0,5000); sum.HTvsMET->Sumw2();
+	sum.NjvsNl  = new TH2D(Form("hist_NjvsNl_combined_%s",TAG) ,";# of lep;# of jet",7,0,7,25,0,25);                sum.NjvsNl ->Sumw2();
+	sum.HTvsMET = new TH2D(Form("hist_HTvsMET_combined_%s",TAG),";MET [60 GeV]; HT [250 GeV]",20,0,1200,20,0,5000); sum.HTvsMET->Sumw2();
 	
 	for(std::vector<MyProcess>::iterator it=vec.begin(); it!=vec.end(); it++){
-		HistIndividualSpectrumCombined(it->ST, sum.ST);
-		HistIndividualSpectrumCombined(it->HT, sum.HT);
-		HistIndividualSpectrumCombined(it->LPT, sum.LPT);
-		HistIndividualSpectrumCombined(it->MET, sum.MET);
-		HistIndividualSpectrumCombined(it->NumJet, sum.NumJet);
+		HistCombineIndividualSpectrum(it->ST, sum.ST);
+		HistCombineIndividualSpectrum(it->HT, sum.HT);
+		HistCombineIndividualSpectrum(it->LPT, sum.LPT);
+		HistCombineIndividualSpectrum(it->MET, sum.MET);
+		HistCombineIndividualSpectrum(it->NumJet, sum.NumJet);
 		sum.NjvsNl  -> Add(it->NjvsNl); 
         sum.HTvsMET -> Add(it->HTvsMET); 
 	}
-	sum.ST.yield.errhA  = sqrt(sum.ST.yield.errhA);  sum.ST.yield.errlA  = sqrt(sum.ST.yield.errlA);
-	sum.HT.yield.errhA  = sqrt(sum.HT.yield.errhA);  sum.HT.yield.errlA  = sqrt(sum.HT.yield.errlA);
-	sum.LPT.yield.errhA = sqrt(sum.LPT.yield.errhA); sum.LPT.yield.errlA = sqrt(sum.LPT.yield.errlA);
-	sum.MET.yield.errhA = sqrt(sum.MET.yield.errhA); sum.MET.yield.errlA = sqrt(sum.MET.yield.errlA);
-	sum.NumJet.yield.errhA = sqrt(sum.NumJet.yield.errhA); sum.NumJet.yield.errlA = sqrt(sum.NumJet.yield.errlA);
+	HistCombinedErrorCalculation(sum.ST.yield);
+	HistCombinedErrorCalculation(sum.HT.yield);
+	HistCombinedErrorCalculation(sum.LPT.yield);
+	HistCombinedErrorCalculation(sum.MET.yield);
+	HistCombinedErrorCalculation(sum.NumJet.yield);
 
+	INFOLOG("#############################");
+	INFOLOG("### Combine all processes ###");
+	INFOLOG("#############################");
+	RecordYield("ST", sum.ST.yield);
+	RecordYield("HT", sum.HT.yield);
+	RecordYield("LPT", sum.LPT.yield);
+	RecordYield("MET", sum.MET.yield);
+	RecordYield("NumJet", sum.NumJet.yield);
+
+	//###Expected data with template fit
 	sum.ST.yExpected  = (TH1D*)sum.ST.yA ->Clone(); sum.ST.yExpected  -> Divide(sum.ST.yB);  sum.ST.yExpected  -> Multiply(sum.ST.yC);
 	sum.HT.yExpected  = (TH1D*)sum.HT.yA ->Clone(); sum.HT.yExpected  -> Divide(sum.HT.yB);  sum.HT.yExpected  -> Multiply(sum.HT.yC);
 	sum.LPT.yExpected = (TH1D*)sum.LPT.yA->Clone(); sum.LPT.yExpected -> Divide(sum.LPT.yB); sum.LPT.yExpected -> Multiply(sum.LPT.yC);
