@@ -9,19 +9,20 @@
 #include <TLine.h>
 #include <TPad.h>
 #include <TStyle.h>
+#include "xsec.h"
 #include "path.h"
 
 const int Nbin = 20;
 const double L = 100;
 const double pb2fb	 = 1000;
-const double pptt    = 815.96   ,Err_pptt    = 45.51;
-const double ppvv    = 192.4    ,Err_ppvv    = 4.1;
-const double ppttv   = 1.77     ,Err_ppttv   = 0.10;
-const double ppvvv   = 0.621    ,Err_ppvvv   = 0.073;
-const double ppttvv  = 0.0219   ,Err_ppttvv  = 0.0013;
-const double pptttt  = 0.0164   ,Err_pptttt  = 9e-04;
-const double ppvvvv  = 0.00405  ,Err_ppvvvv  = 9e-05;
-const double ppttvvv = 0.000249 ,Err_ppttvvv = 3.4e-05;
+//const double pptt    = 815.96   ,Err_pptt    = 45.51;
+//const double ppvv    = 192.4    ,Err_ppvv    = 4.1;
+//const double ppttv   = 1.77     ,Err_ppttv   = 0.10;
+//const double ppvvv   = 0.621    ,Err_ppvvv   = 0.073;
+//const double ppttvv  = 0.0219   ,Err_ppttvv  = 0.0013;
+//const double pptttt  = 0.0164   ,Err_pptttt  = 9e-04;
+//const double ppvvvv  = 0.00405  ,Err_ppvvvv  = 9e-05;
+//const double ppttvvv = 0.000249 ,Err_ppttvvv = 3.4e-05;
 //const char  *PREFIX	 = "/home/xiaokao/Desktop/work_ABCD/skimmed/simulation_delphes";
 //const char  *SUFFIX	 = "skimmed.root";
 const char  *oriTAG	 = "original";
