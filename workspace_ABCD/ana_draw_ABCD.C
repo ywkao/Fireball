@@ -6,6 +6,7 @@
 #include <TGraphAsymmErrors.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TLegend.h>
 #include <THStack.h>
 #include <TStyle.h>
 #include "ana_draw_ABCD.h"
@@ -19,10 +20,10 @@ using namespace std;
 void ana_draw_ABCD(){
 	LOGFile = fopen("INFOLOG","w+"); fclose(LOGFile);// write/update file, to empty the previous content
 	std::vector<MyProcess> vec;//to store spectrum for each bg process
-	importEvents(vec,"ppttvvv");
+	importEvents(vec,"ppttvvv");//2
 	importEvents(vec,"ppvvvv");
-	importEvents(vec,"pptttt");
-	importEvents(vec,"ppttvv");
+	importEvents(vec,"pptttt");//3
+	importEvents(vec,"ppttvv");//1
 	importEvents(vec,"ppvvv");
 	importEvents(vec,"ppttv");
 	importEvents(vec,"ppvv");
@@ -40,24 +41,39 @@ void ana_draw_ABCD(){
 	MyProcessCombined sum;
 	HistCombined(vec,sum);
 	
-	//TCanvas *c5 = new TCanvas("c5","ST" ,0,0,650,350);
-	//TCanvas *c6 = new TCanvas("c6","HT" ,650,0,650,350);
-	//TCanvas *c7 = new TCanvas("c7","LPT",0,380,650,350);
-	//TCanvas *c8 = new TCanvas("c8","MET",650,380,650,350);
 	//TCanvas *can = new TCanvas("can","",800,600);
-	
-	//DrawStackSpectrum(c5,"ST"  , vec, sum);
-	//DrawStackSpectrum(c6,"HT"  , vec, sum);
-	//DrawStackSpectrum(c7,"LPT" , vec, sum);
-	//DrawStackSpectrum(c8,"MET" , vec, sum);
+	//TCanvas *c1 = new TCanvas("c1","ST" ,0,0,650,350);
+	//TCanvas *c2 = new TCanvas("c2","HT" ,650,0,650,350);
+	//TCanvas *c3 = new TCanvas("c3","LPT",0,380,650,350);
+	//TCanvas *c4 = new TCanvas("c4","MET",650,380,650,350);
+	TLegend *legend = new TLegend(0.74,0.5,0.9,0.9);
+
+	//DrawHistSpectrum(can,"Expected","ST", vec, sum, legend);
+	TCanvas *c1 = new TCanvas("c1","ST" ,0,0,650,350);
+	DrawHistSpectrum(c1,"Expected","ST" , vec, sum, legend); legend->Clear();
+	TCanvas *c2 = new TCanvas("c2","HT" ,650,0,650,350);
+	DrawHistSpectrum(c2,"Expected","HT" , vec, sum, legend); legend->Clear();
+	TCanvas *c3 = new TCanvas("c3","LPT",0,380,650,350);
+	DrawHistSpectrum(c3,"Expected","LPT", vec, sum, legend); legend->Clear();
+	TCanvas *c4 = new TCanvas("c4","MET",650,380,650,350);
+	DrawHistSpectrum(c4,"Expected","MET", vec, sum, legend); legend->Clear();
+	TCanvas *can = new TCanvas("can","NumJet",800,600);
+	DrawHistSpectrum(can,"Expected","NumJet", vec, sum, legend); legend->Clear();
+
+	//DrawStackSpectrum(can,"ST"  , vec, sum);
+	//DrawStackSpectrum(c1,"ST"  , vec, sum);
+	//DrawStackSpectrum(c2,"HT"  , vec, sum);
+	//DrawStackSpectrum(c3,"LPT" , vec, sum);
+	//DrawStackSpectrum(c4,"MET" , vec, sum);
 	//DrawStackSpectrum(can,"NumJet", vec, sum);
 
-	//DrawHistSpectrum(c5,"ST" , sum);
-	//DrawHistSpectrum(c6,"HT" , sum);
-	//DrawHistSpectrum(c7,"LPT", sum);
-	//DrawHistSpectrum(c8,"MET", sum);
-	////DrawHistSpectrum(can,"NumJet", sum);
+	//DrawHistSpectrum(c1,"ABCD","ST" , sum, legend);
+	//DrawHistSpectrum(c2,"ABCD","HT" , sum);
+	//DrawHistSpectrum(c3,"ABCD","LPT", sum);
+	//DrawHistSpectrum(c4,"ABCD","MET", sum);
+	//DrawHistSpectrum(can,"ABCD","NumJet", sum);
 
+	//gStyle->SetOptStat(0);
 	//DrawMap(can, sum);
 	
 	std::cout<<"Completed!"<<std::endl;
