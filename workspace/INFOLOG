@@ -1,0 +1,61 @@
+The chosen bp mass is 2 TeV
+Num_lep:     2
+Num_jet:     6
+PT_lep:    30
+PT_jet:    40
+tot_Lep_PT:    20
+HT:  1200
+MET:    50
+ST:  1400
+Num_boson:     0
+
+[fireball]	NEvents = 10000
+Events =    1385 +/-    34.5402 (0.35%)
+Yield =     2.4534 +/-     0.0826 (3.37%)
+Eff =     0.1386 +/-     0.0035 (2.49%)
+
+[pptt]	NEvents = 10000
+Events =       2 +/-     1.4142 (0.00%)
+Yield =   377.0924 +/-   267.4722 (70.93%)
+Eff =     0.0000 +/-     0.0000 (70.71%)
+
+[ppvv]	NEvents = 10000
+Events =       1 +/-     1.0000 (0.00%)
+Yield =    38.3730 +/-    38.3817 (100.02%)
+Eff =     0.0000 +/-     0.0000 (100.00%)
+
+[ppvtt]	NEvents = 10000
+Events =       5 +/-     2.2359 (0.01%)
+Yield =    20.8230 +/-     9.3858 (45.07%)
+Eff =     0.0001 +/-     0.0001 (44.72%)
+
+[ppvvv]	NEvents = 10000
+Events =       1 +/-     1.0000 (0.00%)
+Yield =     1.0254 +/-     1.0325 (100.69%)
+Eff =     0.0000 +/-     0.0000 (100.00%)
+
+[ppvvtt]	NEvents = 10000
+Events =       2 +/-     1.4138 (0.04%)
+Yield =     1.1545 +/-     0.8190 (70.94%)
+Eff =     0.0005 +/-     0.0004 (70.69%)
+
+[pptttt]	NEvents = 10000
+Events =      16 +/-     3.9968 (0.04%)
+Yield =     2.6240 +/-     0.6711 (25.58%)
+Eff =     0.0016 +/-     0.0004 (24.98%)
+
+[ppvvvv]	NEvents = 10000
+Events =       3 +/-     1.7316 (0.03%)
+Yield =     0.2040 +/-     0.1178 (57.76%)
+Eff =     0.0005 +/-     0.0003 (57.72%)
+
+[ppvvvtt]	NEvents = 10000
+Events =      27 +/-     5.1891 (0.05%)
+Yield =     0.0672 +/-     0.0159 (23.58%)
+Eff =     0.0027 +/-     0.0005 (19.22%)
+
+yield_sig = 2.453413, yield_bg = 441.363547
+significance_worst = 0.116673
+
+yield_sig = 2.453413, yield_bg = 441.363547
+significance_pure = 0.116673

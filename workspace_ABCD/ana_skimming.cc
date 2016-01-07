@@ -234,44 +234,54 @@ TCut DecideCut(std::pair<int,int> pair,TCut cut1, TCut cut2){
 //### THE MAIN FUNCTION
 //##########################################################################################
 int main(int argc, char* argv[]){
-	inputFile  = argv[1];//eg. "/afs/cern.ch/user/y/ykao/work/fireball/01source/simulation_delphes_fireball_bp_1TeV.root"
-	savingName = argv[2];//eg. "simulation_delphes_ppvv_skimmed.root"
-	savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace_ABCD/output/skimmed"; 
+	inputFile  = argv[9];//eg. "/afs/cern.ch/user/y/ykao/work/fireball/01source/simulation_delphes_fireball_bp_1TeV.root"
+	savingName = argv[10];//eg. "simulation_delphes_ppvv_skimmed.root"
+	savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace_ABCD/skimmed"; 
 	std::cout << "Processing File: " << inputFile << std::endl;
+	double CUT_Num_lep = atof(argv[1]);
+	double CUT_Num_jet = atof(argv[2]);
+	double CUT_PT_lep  = atof(argv[3]);
+	double CUT_PT_jet  = atof(argv[4]);
+	double CUT_TotLepPT = atof(argv[5]);
+	double CUT_TotJetPT = atof(argv[6]);
+	double CUT_ST 	   = atof(argv[7]);
+	double CUT_MET     = atof(argv[8]);
 
 	std::vector<MyEvent> vec;
 	importEvents(vec,inputFile);
 	
 	//###set selection cuts
-	std::vector<double> factors;//to store the optimized selection cuts
-	double list[9]={2,6,30,40,20,1200,50,1400,0};
-	factors.insert(factors.begin(),list,list+9);
+	//std::vector<double> factors;//to store the optimized selection cuts
+	//double list[9]={2,6,30,40,20,1200,50,1400,0};
+	//factors.insert(factors.begin(),list,list+9);
     //std::cout << "\nChosen factors:" << std::endl;
 	//ListSelectionCuts(factors);//print out the best seclectionCuts!
-	double CUT_Num_lep   = factors.at(0);
-	double CUT_Num_jet   = factors.at(1);
-	double CUT_PT_lep    = factors.at(2);
-	double CUT_PT_jet    = factors.at(3);
-	double CUT_TotLepPT  = factors.at(4);
-	double CUT_TotJetPT  = factors.at(5);
-	double CUT_MET     	 = factors.at(6);
-	double CUT_ST 		 = factors.at(7);
-	double CUT_Num_boson = factors.at(8);
+	//double CUT_Num_lep   = factors.at(0);
+	//double CUT_Num_jet   = factors.at(1);
+	//double CUT_PT_lep    = factors.at(2);
+	//double CUT_PT_jet    = factors.at(3);
+	//double CUT_TotLepPT  = factors.at(4);
+	//double CUT_TotJetPT  = factors.at(5);
+	//double CUT_MET     	 = factors.at(6);
+	//double CUT_ST 		 = factors.at(7);
+	//double CUT_Num_boson = factors.at(8);
 
 	//###ABCD method ( w/o PTcut vs. w/ PTcut; A,B,C,D regions )
 	TFile *fout = new TFile(Form("%s/%s",savingPath,savingName),"recreate");
+	TH1D *histTEST = new TH1D("test","",5,0,5); histTEST->Sumw2(); for(int i=0; i<1000; i++) histTEST->Fill(1);
 	TH2D *hist_NjvsNl[2], *hist_HTvsMET[2];
 	TH1D *histST[2][2][2], *histHT[2][2][2], *histMET[2][2][2], *histLPT[2][2][2];//Spectrum for Num_jet vs. Num_lep; [ori/cut][01][01]
 	TH1D *histNumJet[2][2][2];//Spectrum for HT vs. MET
-	char *CutTag[2] = {"woPTcut","PTcut"}, *Label[4] = {"B","A","C","D"}, *title;//A(0,1) B(0,0) C(1,0) D(1,1)
+	//char *CutTag[2] = {"woPTcut","PTcut"}, *Label[4] = {"B","A","C","D"}, *title;//A(0,1) B(0,0) C(1,0) D(1,1)
+	char *CutTag[2] = {"original","PTcut"}, *Label[4] = {"B","A","C","D"}, *title;//A(0,1) B(0,0) C(1,0) D(1,1)
 	for(int k=0; k<2; k++){
 		for(int i=0; i<2; i++){
 			for(int j=0; j<2; j++){
 				title = Form("%s;GeV;Entries / 125 GeV",Label[2*i+j]);
-				histST[k][i][j]	    = new TH1D(Form("histST_%s%d%d"	   ,CutTag[k],i,j),title,Nbins,0,5000); histST[k][i][j]	->Sumw2();
-				histHT[k][i][j]	    = new TH1D(Form("histHT_%s%d%d"	   ,CutTag[k],i,j),title,Nbins,0,5000); histHT[k][i][j]	->Sumw2();
-				histLPT[k][i][j]    = new TH1D(Form("histLPT_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,1200); histLPT[k][i][j]->Sumw2();
-				histMET[k][i][j]    = new TH1D(Form("histMET_%s%d%d"   ,CutTag[k],i,j),title,Nbins,0,1200); histMET[k][i][j]->Sumw2();
+				histST[k][i][j]	 = new TH1D(Form("histST_%s%d%d" ,CutTag[k],i,j),title,Nbins,0,5000); histST[k][i][j] ->Sumw2();
+				histHT[k][i][j]	 = new TH1D(Form("histHT_%s%d%d" ,CutTag[k],i,j),title,Nbins,0,5000); histHT[k][i][j] ->Sumw2();
+				histLPT[k][i][j] = new TH1D(Form("histLPT_%s%d%d",CutTag[k],i,j),title,Nbins,0,1200); histLPT[k][i][j]->Sumw2();
+				histMET[k][i][j] = new TH1D(Form("histMET_%s%d%d",CutTag[k],i,j),title,Nbins,0,1200); histMET[k][i][j]->Sumw2();
 				title = Form("%s;# of jets;Entries",Label[2*i+j]);
 				histNumJet[k][i][j] = new TH1D(Form("histNumJet_%s%d%d",CutTag[k],i,j),title,Nbins,0,25)  ; histNumJet[k][i][j]->Sumw2();
 			}
@@ -280,6 +290,7 @@ int main(int argc, char* argv[]){
 		hist_HTvsMET[k] = new TH2D(Form("hist_HTvsMET_%s",CutTag[k]),";MET (60 GeV); HT (250 GeV)",20,0,1200,20,0,5000); hist_HTvsMET[k]->Sumw2();
 	}//end of k
 
+	//if(Option == "original"){
 	for( std::vector<MyEvent>::iterator it=vec.begin(); it!=vec.end(); it++){
 		double Num_lep = 0, Num_jet = 0, MET = 0;
 		double TotLepPT = 0, TotLepPT_selected = 0;
@@ -287,30 +298,56 @@ int main(int argc, char* argv[]){
 		double ST = 0, ST_selected = 0;
 		
 		//lep, jet
-		GetParticleInfo(it, "Lep", CUT_Num_lep, Num_lep, TotLepPT, TotLepPT_selected);
-		GetParticleInfo(it, "Jet", CUT_Num_jet, Num_jet, TotJetPT, TotJetPT_selected);
+		GetParticleInfo(it, "Lep", CUT_PT_lep, Num_lep, TotLepPT, TotLepPT_selected);
+		GetParticleInfo(it, "Jet", CUT_PT_jet, Num_jet, TotJetPT, TotJetPT_selected);
 		//met
 		MET = it->METs[0].pt;
 		//ST
 		ST = TotLepPT + TotJetPT + MET;
 		ST_selected = TotLepPT_selected + TotJetPT_selected + MET;
 
+		hist_NjvsNl[0] ->Fill(it->Electrons.size()+it->Muons.size(),it->Jets.size());
+		hist_HTvsMET[0]->Fill(MET,TotJetPT);
+
+		if(Num_lep < CUT_Num_lep && Num_jet < CUT_Num_jet)
+			{histST[0][0][0]->Fill(ST_selected); histHT[0][0][0]->Fill(TotJetPT_selected); histLPT[0][0][0]->Fill(TotLepPT_selected); histMET[0][0][0]->Fill(MET);}
+		if(!(Num_lep < CUT_Num_lep) && Num_jet < CUT_Num_jet)
+			{histST[0][1][0]->Fill(ST_selected); histHT[0][1][0]->Fill(TotJetPT_selected); histLPT[0][1][0]->Fill(TotLepPT_selected); histMET[0][1][0]->Fill(MET);}
+		if(Num_lep < CUT_Num_lep && !(Num_jet < CUT_Num_jet))
+			{histST[0][0][1]->Fill(ST_selected); histHT[0][0][1]->Fill(TotJetPT_selected); histLPT[0][0][1]->Fill(TotLepPT_selected); histMET[0][0][1]->Fill(MET);}
+		if(!(Num_lep < CUT_Num_lep) && !(Num_jet < CUT_Num_jet))
+			{histST[0][1][1]->Fill(ST_selected); histHT[0][1][1]->Fill(TotJetPT_selected); histLPT[0][1][1]->Fill(TotLepPT_selected); histMET[0][1][1]->Fill(MET);}
+			
+		if(MET < CUT_MET && ST < CUT_ST)		histNumJet[0][0][0]->Fill(Num_jet);
+		if(!(MET < CUT_MET) && ST < CUT_ST)		histNumJet[0][1][0]->Fill(Num_jet);
+		if(MET < CUT_MET && !(ST < CUT_ST))		histNumJet[0][0][1]->Fill(Num_jet);
+		if(!(MET < CUT_MET) && !(ST < CUT_ST))	histNumJet[0][1][1]->Fill(Num_jet);
+	}//end of event iterator
+
+	//if(Option == "NjvsNl"){
+	for( std::vector<MyEvent>::iterator it=vec.begin(); it!=vec.end(); it++){
+		double Num_lep = 0, Num_jet = 0, MET = 0;
+		double TotLepPT = 0, TotLepPT_selected = 0;
+		double TotJetPT = 0, TotJetPT_selected = 0;
+		double ST = 0, ST_selected = 0;
+		
+		//lep, jet
+		GetParticleInfo(it, "Lep", CUT_PT_lep, Num_lep, TotLepPT, TotLepPT_selected);
+		GetParticleInfo(it, "Jet", CUT_PT_jet, Num_jet, TotJetPT, TotJetPT_selected);
+		//met
+		MET = it->METs[0].pt;
+		//ST
+		ST = TotLepPT + TotJetPT + MET;
+		ST_selected = TotLepPT_selected + TotJetPT_selected + MET;
+
+		if(MET<CUT_MET) continue;
+		if(ST<CUT_ST) continue;
+		if(TotLepPT_selected<CUT_TotLepPT) continue;
+		if(TotJetPT_selected<CUT_TotJetPT) continue;
 
 		hist_NjvsNl[0]->Fill(it->Electrons.size()+it->Muons.size(),it->Jets.size());
-		hist_HTvsMET[0]->Fill(MET,TotJetPT);
 		hist_NjvsNl[1]->Fill(Num_lep,Num_jet);
-		hist_HTvsMET[1]->Fill(MET,TotJetPT_selected);
 
-
-		if(it->Electrons.size()+it->Muons.size() < CUT_Num_lep && it->Jets.size() < CUT_Num_jet)
-			{histST[0][0][0]->Fill(ST); histHT[0][0][0]->Fill(TotJetPT); histLPT[0][0][0]->Fill(TotLepPT); histMET[0][0][0]->Fill(MET);}
-		if(!(it->Electrons.size()+it->Muons.size() < CUT_Num_lep) && it->Jets.size() < CUT_Num_jet)
-			{histST[0][1][0]->Fill(ST); histHT[0][1][0]->Fill(TotJetPT); histLPT[0][1][0]->Fill(TotLepPT); histMET[0][1][0]->Fill(MET);}
-		if(it->Electrons.size()+it->Muons.size() < CUT_Num_lep && !(it->Jets.size() < CUT_Num_jet))
-			{histST[0][0][1]->Fill(ST); histHT[0][0][1]->Fill(TotJetPT); histLPT[0][0][1]->Fill(TotLepPT); histMET[0][0][1]->Fill(MET);}
-		if(!(it->Electrons.size()+it->Muons.size() < CUT_Num_lep) && !(it->Jets.size() < CUT_Num_jet))
-			{histST[0][1][1]->Fill(ST); histHT[0][1][1]->Fill(TotJetPT); histLPT[0][1][1]->Fill(TotLepPT); histMET[0][1][1]->Fill(MET);}
-			
 		if(Num_lep < CUT_Num_lep && Num_jet < CUT_Num_jet)
 			{histST[1][0][0]->Fill(ST_selected); histHT[1][0][0]->Fill(TotJetPT_selected); histLPT[1][0][0]->Fill(TotLepPT_selected); histMET[1][0][0]->Fill(MET);}
 		if(!(Num_lep < CUT_Num_lep) && Num_jet < CUT_Num_jet)
@@ -319,17 +356,37 @@ int main(int argc, char* argv[]){
 			{histST[1][0][1]->Fill(ST_selected); histHT[1][0][1]->Fill(TotJetPT_selected); histLPT[1][0][1]->Fill(TotLepPT_selected); histMET[1][0][1]->Fill(MET);}
 		if(!(Num_lep < CUT_Num_lep) && !(Num_jet < CUT_Num_jet))
 			{histST[1][1][1]->Fill(ST_selected); histHT[1][1][1]->Fill(TotJetPT_selected); histLPT[1][1][1]->Fill(TotLepPT_selected); histMET[1][1][1]->Fill(MET);}
-			
-			
-		if(MET < CUT_MET && ST < CUT_ST)		histNumJet[0][0][0]->Fill(it->Jets.size());
-		if(!(MET < CUT_MET) && ST < CUT_ST)		histNumJet[0][1][0]->Fill(it->Jets.size());
-		if(MET < CUT_MET && !(ST < CUT_ST))		histNumJet[0][0][1]->Fill(it->Jets.size());
-		if(!(MET < CUT_MET) && !(ST < CUT_ST))	histNumJet[0][1][1]->Fill(it->Jets.size());
+	}//end of event iterator
+
+	//if(Option == "HTvsMET"){
+	for( std::vector<MyEvent>::iterator it=vec.begin(); it!=vec.end(); it++){
+		double Num_lep = 0, Num_jet = 0, MET = 0;
+		double TotLepPT = 0, TotLepPT_selected = 0;
+		double TotJetPT = 0, TotJetPT_selected = 0;
+		double ST = 0, ST_selected = 0;
+		
+		//lep, jet
+		GetParticleInfo(it, "Lep", CUT_PT_lep, Num_lep, TotLepPT, TotLepPT_selected);
+		GetParticleInfo(it, "Jet", CUT_PT_jet, Num_jet, TotJetPT, TotJetPT_selected);
+		//met
+		MET = it->METs[0].pt;
+		//ST
+		ST = TotLepPT + TotJetPT + MET;
+		ST_selected = TotLepPT_selected + TotJetPT_selected + MET;
+
+		if(Num_lep<CUT_Num_lep) continue;
+		if(Num_jet<CUT_Num_jet) continue;
+		if(ST<CUT_ST) continue;
+		if(TotLepPT_selected<CUT_TotLepPT) continue;
+
+		hist_HTvsMET[0]->Fill(MET,TotJetPT);
+		hist_HTvsMET[1]->Fill(MET,TotJetPT_selected);
 			
 		if(MET < CUT_MET && ST_selected < CUT_ST)		histNumJet[1][0][0]->Fill(Num_jet);
 		if(!(MET < CUT_MET) && ST_selected < CUT_ST)	histNumJet[1][1][0]->Fill(Num_jet);
 		if(MET < CUT_MET && !(ST_selected < CUT_ST))	histNumJet[1][0][1]->Fill(Num_jet);
 		if(!(MET < CUT_MET) && !(ST_selected < CUT_ST))	histNumJet[1][1][1]->Fill(Num_jet);
+	}//end of event iterator
 			
 		//TCut cut, cut1[2], cut2[2], cut3[2], cut4[2];
 		//cut1[0] = "it->Electrons.size()+it->Muons.size() < CUT_Num_lep";
@@ -366,9 +423,15 @@ int main(int argc, char* argv[]){
 		}//end of k
 		*/
 
-	}//end of event iterator
-
 	fout->Write();
 	fout->Close();
 	return 1;
 }
+		//if(it->Electrons.size()+it->Muons.size() < CUT_Num_lep && it->Jets.size() < CUT_Num_jet)
+		//	{histST[0][0][0]->Fill(ST); histHT[0][0][0]->Fill(TotJetPT); histLPT[0][0][0]->Fill(TotLepPT); histMET[0][0][0]->Fill(MET);}
+		//if(!(it->Electrons.size()+it->Muons.size() < CUT_Num_lep) && it->Jets.size() < CUT_Num_jet)
+		//	{histST[0][1][0]->Fill(ST); histHT[0][1][0]->Fill(TotJetPT); histLPT[0][1][0]->Fill(TotLepPT); histMET[0][1][0]->Fill(MET);}
+		//if(it->Electrons.size()+it->Muons.size() < CUT_Num_lep && !(it->Jets.size() < CUT_Num_jet))
+		//	{histST[0][0][1]->Fill(ST); histHT[0][0][1]->Fill(TotJetPT); histLPT[0][0][1]->Fill(TotLepPT); histMET[0][0][1]->Fill(MET);}
+		//if(!(it->Electrons.size()+it->Muons.size() < CUT_Num_lep) && !(it->Jets.size() < CUT_Num_jet))
+		//	{histST[0][1][1]->Fill(ST); histHT[0][1][1]->Fill(TotJetPT); histLPT[0][1][1]->Fill(TotLepPT); histMET[0][1][1]->Fill(MET);}
