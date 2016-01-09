@@ -1,6 +1,5 @@
 #include <stdio.h>//FILE
 #include <iostream>
-#include <iomanip> //for using setw(n)
 #include <vector>
 #include <math.h>
 #include "classes/DelphesClasses.h"
@@ -38,12 +37,10 @@ char *processes[NUM] = {"fireball", "pptt", "ppvv", "ppvtt", "ppvvv", "ppvvtt", 
 char *units[NUM_hist] = {"# of lep", "# of jet", "GeV", "GeV", "GeV", "GeV", "GeV", "GeV", "# of boson", "GeV", "GeV", "eta", "rad."};
 
 int SIG;//record the input value
-//char *savingPath;
+char *savingPath;
 //char *suffix;
-//double X[NUM];
-//double Err_X[NUM];
-double X;
-double Err_X;
+double X[NUM];
+double Err_X[NUM];
 
 //#############################################
 //### Set The Format to Store Particle Info
@@ -106,8 +103,7 @@ void Removing(std::vector< std::pair<std::pair<int,int>,double> > &bosonCandidat
 //#############################################
 //### The Function to Load Data
 //#############################################
-//std::vector<MyEvent> vec_sig, vec_bg[num_bg];
-std::vector<MyEvent> vec;
+std::vector<MyEvent> vec_sig, vec_bg[num_bg];
 void importEvents(std::vector<MyEvent> &vec, TString filename){
 	std::cout<<"Loading: "<<filename<<std::endl;
 
@@ -196,28 +192,21 @@ void importEvents(std::vector<MyEvent> &vec, TString filename){
 //#############################################
 //### Initialization & Selection Cuts
 //#############################################
-TH1D *hist_Ori[NUM_hist];//before cuts 
-TH1D *hist_Cut[NUM_hist];//after cuts 
-TH1D *hist_Nm1[NUM_hist];//N-1 plots 
-//TH1D *hist_Ori[NUM_hist][NUM];//before cuts 
-//TH1D *hist_Cut[NUM_hist][NUM];//after cuts 
-//TH1D *hist_Nm1[NUM_hist][NUM];//N-1 plots 
+TH1D *hist_Ori[NUM_hist][NUM];//before cuts 
+TH1D *hist_Cut[NUM_hist][NUM];//after cuts 
+TH1D *hist_Nm1[NUM_hist][NUM];//N-1 plots 
 //THStack *hist_Stack_Ori[NUM_CUT];//before cuts 
 //THStack *hist_Stack_Cut[NUM_CUT];//after cuts 
 //THStack *hist_Stack_Copy[NUM_CUT];//before cuts 
-//TLine *CutLine[NUM_CUT];//the cut lines
-//int CutLineColor = kBlack;
+TLine *CutLine[NUM_CUT];//the cut lines
+int CutLineColor = kBlack;
 
-int    n_bin[NUM_hist]={10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16};
-double l_bin[NUM_hist]={0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8};
-double h_bin[NUM_hist]={10,40, 1000,2000, 1000,7000,1500,8000,12,U_MASS,1600,8,8};
-
-//int    n_bin[2][NUM_hist]={{10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,60,16,16},
-//						   {10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16}};
-//double l_bin[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
-//						   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
-//double h_bin[2][NUM_hist]={{10,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
-//						   {10,40,1000,2000,1000,7000,1500,8000,12,U_MASS,1600,8,8}};
+int    n_bin[2][NUM_hist]={{10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,60,16,16},
+						   {10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16}};
+double l_bin[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
+						   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
+double h_bin[2][NUM_hist]={{10,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
+						   {10,40,1000,2000,1000,7000,1500,8000,12,U_MASS,1600,8,8}};
 //int    n_bin_ori[2][NUM_hist]={{10,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
 //							   {10,40,50,50,50,35,50,40,12,U_MASS-L_MASS,100,16,16}};
 //int    n_bin_cut[2][NUM_hist]={{ 8,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
@@ -252,29 +241,29 @@ void ListSelectionCuts(std::vector<double> factors){
 }
 struct CrossSection {
 	//std::pair<double,double> pptt = std::make_pair(815.96,45.51); WHY DOES IT NOT WORK??
-	const double GetCrossSection(const char* Name){
-		if((string)Name=="fireball_bp_1TeV") 	return fireball_bp_1TeV;
-		if((string)Name=="fireball_bp_2TeV") 	return fireball_bp_2TeV;
-		if((string)Name=="pptt") 	return pptt;
-		if((string)Name=="ppvv")    return ppvv;
-		if((string)Name=="ppvtt")   return ppvtt;
-		if((string)Name=="ppvvv")   return ppvvv;
-		if((string)Name=="ppvvtt")  return ppvvtt;
-		if((string)Name=="pptttt")  return pptttt;
-		if((string)Name=="ppvvvv")  return ppvvvv;
-		if((string)Name=="ppvvvtt") return ppvvvtt;
+	double GetCrossSection(const char* Name){
+		if(Name=="fireball_bp_1TeV") 	return fireball_bp_1TeV;
+		if(Name=="fireball_bp_2TeV") 	return fireball_bp_2TeV;
+		if(Name=="pptt") 	return pptt;
+		if(Name=="ppvv")    return ppvv;
+		if(Name=="ppttv")   return ppttv;
+		if(Name=="ppvvv")   return ppvvv;
+		if(Name=="ppttvv")  return ppttvv;
+		if(Name=="pptttt")  return pptttt;
+		if(Name=="ppvvvv")  return ppvvvv;
+		if(Name=="ppttvvv") return ppttvvv;
 	}
-	const double GetCrossSectionErr(const char* Name){
-		if((string)Name=="fireball_bp_1TeV") 	return Err_fireball_bp_1TeV;
-		if((string)Name=="fireball_bp_2TeV") 	return Err_fireball_bp_2TeV;
-		if((string)Name=="pptt") 	return Err_pptt;
-		if((string)Name=="ppvv")    return Err_ppvv;
-		if((string)Name=="ppvtt")   return Err_ppvtt;
-		if((string)Name=="ppvvv")   return Err_ppvvv;
-		if((string)Name=="ppvvtt")  return Err_ppvvtt;
-		if((string)Name=="pptttt")  return Err_pptttt;
-		if((string)Name=="ppvvvv")  return Err_ppvvvv;
-		if((string)Name=="ppvvvtt") return Err_ppvvvtt;
+	double GetCrossSectionErr(const char* Name){
+		if(Name=="fireball_bp_1TeV") 	return Err_fireball_bp_1TeV;
+		if(Name=="fireball_bp_2TeV") 	return Err_fireball_bp_2TeV;
+		if(Name=="pptt") 	return Err_pptt;
+		if(Name=="ppvv")    return Err_ppvv;
+		if(Name=="ppttv")   return Err_ppttv;
+		if(Name=="ppvvv")   return Err_ppvvv;
+		if(Name=="ppttvv")  return Err_ppttvv;
+		if(Name=="pptttt")  return Err_pptttt;
+		if(Name=="ppvvvv")  return Err_ppvvvv;
+		if(Name=="ppttvvv") return Err_ppttvvv;
 	}
 }; CrossSection Xsec;
 
