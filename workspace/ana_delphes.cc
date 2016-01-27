@@ -19,7 +19,7 @@
 #include <TMath.h>
 using namespace std;
 
-const char *savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace";
+const char *savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace/skimmed";
 const char *PREFIX = "/afs/cern.ch/user/y/ykao/work/fireball/01source/simulation_delphes_";
 const char *SUFFIX;
 char *PROCESS;
@@ -27,13 +27,17 @@ const char *path;
 
 int main(int argc, char *argv[]){
 	PROCESS = argv[1];
-	SIG = atoi(argv[2]);//0=signal
-	if(SIG==0) SUFFIX = ".root";
-	if(SIG==1) SUFFIX = "_jet_matching.root";
+	TAIL = atoi(argv[2]);//0==.root
+	if(TAIL==0) SUFFIX = ".root";
+	if(TAIL==1) SUFFIX = "_jet_matching.root";
 
 	path = Form("%s%s%s",PREFIX,PROCESS,SUFFIX);
 	message = Form("[INFO] Importing: %s", path); INFOLOG(message);
-	importEvents(vec,path);
+	std::cout<<"Loading: "<<path<<std::endl;
+	TChain *chain = new TChain("Delphes");
+	chain->Add(path);
+	ExRootTreeReader *TreeReader = new ExRootTreeReader(chain);
+	importEvents(vec,TreeReader);
 
 	X 	  = Xsec.GetCrossSection(PROCESS); 
 	Err_X = Xsec.GetCrossSectionErr(PROCESS);
@@ -124,19 +128,21 @@ int main(int argc, char *argv[]){
 			ST = SPT_lep + SPT_jet + TOT_MET;
 			ST_woPTcut = SPT_lep_woPTcut + SPT_jet_woPTcut + TOT_MET;
 
-			hist_Ori[0] -> Fill((it->Electrons.size()+it->Muons.size()),weighting);
-    		hist_Ori[1] -> Fill(it->Jets.size(),weighting);
-    		hist_Ori[4] -> Fill(SPT_lep_woPTcut,weighting);
-    		hist_Ori[5] -> Fill(SPT_jet_woPTcut,weighting);
-			hist_Ori[6] -> Fill(TOT_MET,weighting);
-			hist_Ori[7] -> Fill(ST_woPTcut,weighting);
-			hist_Ori[8] -> Fill(it->H_Bosons.size(),weighting);
-			for(int i=0; i<PT_lep.size(); i++) hist_Ori[2] -> Fill(PT_lep.at(i),weighting);
-			for(int i=0; i<PT_jet.size(); i++) hist_Ori[3] -> Fill(PT_jet.at(i),weighting);
-			for(int i=0; i<MASS_boson.size(); i++)    hist_Ori[9]  -> Fill(MASS_boson.at(i),weighting);
-			for(int i=0; i<PT_chosenJet.size(); i++)  hist_Ori[10] -> Fill(PT_chosenJet.at(i),weighting);
-			for(int i=0; i<Eta_chosenJet.size(); i++) hist_Ori[11] -> Fill(Eta_chosenJet.at(i),weighting);
-			for(int i=0; i<Phi_chosenJet.size(); i++) hist_Ori[12] -> Fill(Phi_chosenJet.at(i),weighting);
+			if(N==0){//Store the original info once!
+				hist_Ori[0] -> Fill((it->Electrons.size()+it->Muons.size()),weighting);
+    			hist_Ori[1] -> Fill(it->Jets.size(),weighting);
+    			hist_Ori[4] -> Fill(SPT_lep_woPTcut,weighting);
+    			hist_Ori[5] -> Fill(SPT_jet_woPTcut,weighting);
+				hist_Ori[6] -> Fill(TOT_MET,weighting);
+				hist_Ori[7] -> Fill(ST_woPTcut,weighting);
+				hist_Ori[8] -> Fill(it->H_Bosons.size(),weighting);
+				for(int i=0; i<PT_lep.size(); i++) hist_Ori[2] -> Fill(PT_lep.at(i),weighting);
+				for(int i=0; i<PT_jet.size(); i++) hist_Ori[3] -> Fill(PT_jet.at(i),weighting);
+				for(int i=0; i<MASS_boson.size(); i++)    hist_Ori[9]  -> Fill(MASS_boson.at(i),weighting);
+				for(int i=0; i<PT_chosenJet.size(); i++)  hist_Ori[10] -> Fill(PT_chosenJet.at(i),weighting);
+				for(int i=0; i<Eta_chosenJet.size(); i++) hist_Ori[11] -> Fill(Eta_chosenJet.at(i),weighting);
+				for(int i=0; i<Phi_chosenJet.size(); i++) hist_Ori[12] -> Fill(Phi_chosenJet.at(i),weighting);
+			}
 
 			if(it->H_Bosons.size() < CUT_Num_boson) continue;
 			if(Num_lep < CUT_Num_lep) continue;

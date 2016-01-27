@@ -28,16 +28,12 @@ const double L=100.;
 const double pb2fb=1000.;
 const double L_MASS=60.;//mass lower bound for bonson candidates
 const double U_MASS=110.;//mass upper bound for bonson candidates
-//double X_sig[2] = {0.051, 0.000177}; //1TeV, 2TeV
-//double Err_X_sig[2] = {0.001, 4e-06}; //1TeV, 2TeV
-//double X_bg[8] = {815.96, 192.4, 1.77, 0.621, 0.0219, 0.0164, 0.00405, 0.000249}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
-//double Err_X_bg[8] = {45.51, 4.1, 0.10, 0.073, 0.0013, 9e-04, 9e-05, 3.4e-05}; //pptt, ppvv, ppvtt, ppvvv, ppvvtt, pptttt, ppvvvv, ppvvvtt
 
 char *histName[13]={"Num_lep","Num_jet","PT_lep","PT_jet","tot_Lep_PT","HT","MET","ST","Num_boson","M_boson","PT_chosenJet","Eta_chosenJet","Phi_chosenJet"};
 char *processes[NUM] = {"fireball", "pptt", "ppvv", "ppvtt", "ppvvv", "ppvvtt", "pptttt", "ppvvvv", "ppvvvtt"};
 char *units[NUM_hist] = {"# of lep", "# of jet", "GeV", "GeV", "GeV", "GeV", "GeV", "GeV", "# of boson", "GeV", "GeV", "eta", "rad."};
 
-int SIG;//record the input value
+int TAIL;//record the input value
 //char *savingPath;
 //char *suffix;
 //double X[NUM];
@@ -108,13 +104,8 @@ void Removing(std::vector< std::pair<std::pair<int,int>,double> > &bosonCandidat
 //#############################################
 //std::vector<MyEvent> vec_sig, vec_bg[num_bg];
 std::vector<MyEvent> vec;
-void importEvents(std::vector<MyEvent> &vec, TString filename){
-	std::cout<<"Loading: "<<filename<<std::endl;
-
-	TChain *chain = new TChain("Delphes");
-	chain->Add(filename);
-
-	ExRootTreeReader *TreeReader = new ExRootTreeReader(chain);
+//void importEvents(std::vector<MyEvent> &vec, TString filename){
+void importEvents(std::vector<MyEvent> &vec, ExRootTreeReader *TreeReader){
 	TClonesArray *branchElectron = TreeReader->UseBranch("Electron");
 	TClonesArray *branchMuon = TreeReader->UseBranch("Muon");
 	TClonesArray *branchJet = TreeReader->UseBranch("Jet");
@@ -199,38 +190,12 @@ void importEvents(std::vector<MyEvent> &vec, TString filename){
 TH1D *hist_Ori[NUM_hist];//before cuts 
 TH1D *hist_Cut[NUM_hist];//after cuts 
 TH1D *hist_Nm1[NUM_hist];//N-1 plots 
-//TH1D *hist_Ori[NUM_hist][NUM];//before cuts 
-//TH1D *hist_Cut[NUM_hist][NUM];//after cuts 
-//TH1D *hist_Nm1[NUM_hist][NUM];//N-1 plots 
-//THStack *hist_Stack_Ori[NUM_CUT];//before cuts 
-//THStack *hist_Stack_Cut[NUM_CUT];//after cuts 
-//THStack *hist_Stack_Copy[NUM_CUT];//before cuts 
 //TLine *CutLine[NUM_CUT];//the cut lines
 //int CutLineColor = kBlack;
 
-int    n_bin[NUM_hist]={10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16};
+int    n_bin[NUM_hist]={10,30,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16};
 double l_bin[NUM_hist]={0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8};
-double h_bin[NUM_hist]={10,40, 1000,2000, 1000,7000,1500,8000,12,U_MASS,1600,8,8};
-
-//int    n_bin[2][NUM_hist]={{10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,60,16,16},
-//						   {10,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16}};
-//double l_bin[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
-//						   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
-//double h_bin[2][NUM_hist]={{10,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
-//						   {10,40,1000,2000,1000,7000,1500,8000,12,U_MASS,1600,8,8}};
-//int    n_bin_ori[2][NUM_hist]={{10,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
-//							   {10,40,50,50,50,35,50,40,12,U_MASS-L_MASS,100,16,16}};
-//int    n_bin_cut[2][NUM_hist]={{ 8,40,50,50,50,50,50,50,12,U_MASS-L_MASS,60,16,16},
-//							   {12,40,50,50,50,50,50,50,12,U_MASS-L_MASS,100,16,16}};
-//int    n_bin_cut[2][NUM_hist]={{ 8,20,20,20,20,20,20,20,12,U_MASS-L_MASS,60,16,16},
-//							   {12,20,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16}};
-//double l_bin_cut[2][NUM_hist]={{0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8},
-//							   {0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8}};
-//double h_bin_cut[2][NUM_hist]={{ 8,40, 800,1400, 600,5000,1200,7500,12,U_MASS,1200,8,8},
-//							   {12,40,1000,2000,1000,5500,1500,8000,12,U_MASS,1600,8,8}};
-//double scaleBosonMass, scaleChosenJetEta, scaleChosenJetPhi, scaleLepSPT;//hist->SetMaximum(scale)
-//if(SIG==1)	{scaleBosonMass = 20000, scaleChosenJetEta = 20000, scaleChosenJetPhi = 200000, scaleLepSPT = 1000;}
-//if(SIG==2)  {scaleBosonMass = 500, scaleChosenJetEta = 10000, scaleChosenJetPhi = 5000, scaleLepSPT = 1000;}
+double h_bin[NUM_hist]={10,30, 1000,2000, 1000,7000,1500,8000,12,U_MASS,1600,8,8};
 
 //#############################################
 //### Miscellaneous Functions
@@ -251,10 +216,7 @@ void ListSelectionCuts(std::vector<double> factors){
     }
 }
 struct CrossSection {
-	//std::pair<double,double> pptt = std::make_pair(815.96,45.51); WHY DOES IT NOT WORK??
-	const double GetCrossSection(const char* Name){
-		if((string)Name=="fireball_bp_1TeV") 	return fireball_bp_1TeV;
-		if((string)Name=="fireball_bp_2TeV") 	return fireball_bp_2TeV;
+	double GetCrossSection(const char* Name){
 		if((string)Name=="pptt") 	return pptt;
 		if((string)Name=="ppvv")    return ppvv;
 		if((string)Name=="ppvtt")   return ppvtt;
@@ -264,9 +226,7 @@ struct CrossSection {
 		if((string)Name=="ppvvvv")  return ppvvvv;
 		if((string)Name=="ppvvvtt") return ppvvvtt;
 	}
-	const double GetCrossSectionErr(const char* Name){
-		if((string)Name=="fireball_bp_1TeV") 	return Err_fireball_bp_1TeV;
-		if((string)Name=="fireball_bp_2TeV") 	return Err_fireball_bp_2TeV;
+	double GetCrossSectionErr(const char* Name){
 		if((string)Name=="pptt") 	return Err_pptt;
 		if((string)Name=="ppvv")    return Err_ppvv;
 		if((string)Name=="ppvtt")   return Err_ppvtt;
@@ -277,39 +237,3 @@ struct CrossSection {
 		if((string)Name=="ppvvvtt") return Err_ppvvvtt;
 	}
 }; CrossSection Xsec;
-
-
-/*
-void SetStyle(){
-	gStyle->SetOptStat(0);
-}
-void DrawSetting(TH1D *&hist, TLegend *&leg, char *text, char* title, char *xtitle, char *ytitle, int style, int color){
-	hist->SetTitle(title);
-	hist->SetXTitle(xtitle);
-	hist->SetYTitle(ytitle);
-	hist->GetYaxis()->SetTitleOffset(1.2);
-	hist->SetFillStyle(style);
-	hist->SetFillColor(color);
-	hist->SetLineColor(1);
-	hist->SetLineWidth(0);
-	leg ->AddEntry(hist,text,"f");
-	leg ->SetTextSize(0.042);
-}
-void DrawSettingGen(TNtuple *&ntuple, TLegend *&leg, char *text, Double_t markerSize, int markerStyle, int lineStyle, int lineWidth, int color){
-	ntuple->SetMarkerSize(markerSize);
-	ntuple->SetMarkerColor(color);
-	ntuple->SetMarkerStyle(markerStyle);
-	ntuple->SetLineColor(color);
-	ntuple->SetLineStyle(lineStyle);
-	ntuple->SetLineWidth(lineWidth);
-	leg->AddEntry(ntuple,text,"lp");//lepf
-}
-*/
-
-//void PrintSelectionCuts(std::vector<double> factors){
-//	std::cout<<"factors are:";
-//	for( std::vector<Double_t>::iterator it = factors.begin(); it!=factors.end(); it++)
-//		std::cout<<' '<<*it; 
-//	std::cout<<'\n';
-//}
-
