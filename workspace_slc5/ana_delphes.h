@@ -23,16 +23,13 @@ using namespace std;
 
 const int num_bg=8;
 const int NUM=9;
-const int NUM_hist=13;
+const int NUM_hist=14;
 const int NUM_CUT=9;
 const double L=100.;
 const double pb2fb=1000.;
 const double L_MASS=60.;//mass lower bound for bonson candidates
 const double U_MASS=110.;//mass upper bound for bonson candidates
-
-char *histName[13]={"Num_lep","Num_jet","PT_lep","PT_jet","tot_Lep_PT","HT","MET","ST","Num_boson","M_boson","PT_chosenJet","Eta_chosenJet","Phi_chosenJet"};
-char *processes[NUM] = {"fireball", "pptt", "ppvv", "ppvtt", "ppvvv", "ppvvtt", "pptttt", "ppvvvv", "ppvvvtt"};
-char *units[NUM_hist] = {"# of lep", "# of jet", "GeV", "GeV", "GeV", "GeV", "GeV", "GeV", "# of boson", "GeV", "GeV", "eta", "rad."};
+char *histName[NUM_hist]={"Num_lep","Num_jet","PT_lep","PT_jet","LPT","HT","MET","ST","Num_boson","M_boson","PT_chJet","Eta_chJet","Phi_chJet","Gen_HT"};
 
 double X;
 double Err_X;
@@ -113,12 +110,12 @@ bool PreSelection(int GenNumLep, double GenHT){
 
 
 //#############################################
-//### The Function to Load Data
+//### The Functions to Load Data
 //#############################################
 void ChainingEvents(string PROCESS, TChain *&chain){
 	if(PROCESS=="pptt"){
 	//chain->Add("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_Go02/Events/run_ht_min_2500/tag_1_delphes_events.root");
-		if(PRESELECTION==1){//apply on the events w/o preselection
+		if(PRESELECTION==0 || PRESELECTION==1){//apply on the events w/o preselection
 			//chain->Add("/raid2/w/ykao/simulation/pptt_31/Events/run_100k_31_0/tag_1_delphes_events.root");
 			for(int i=1; i<30; i++){
 				if( i==1 || i==10 || i==20) continue;
@@ -128,19 +125,23 @@ void ChainingEvents(string PROCESS, TChain *&chain){
 					for(int j=0; j<10; j++)	chain->Add(Form("/raid1/w/ykao/simulation/pptt_%d/Events/run_100k_%d_%d/tag_1_delphes_events.root",i,i,j));
 			}
 		} else{
+			//chain->Add("/raid2/w/ykao/simulation/pptt_51/Events/run_20k_51_0/tag_1_delphes_events.root");
 			chain->Add("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_52/Events/run_100k_52_0/tag_1_delphes_events.root");
 			chain->Add("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_52/Events/run_100k_52_1/tag_1_delphes_events.root");
 			for(int i=41; i<50; i++){
 				for(int j=0; j<10; j++)	chain->Add(Form("/raid2/w/ykao/simulation/pptt_%d/Events/run_10k_%d_%d/tag_1_delphes_events.root",i,i,j));
 			}
 			for(int i=51; i<60; i++){
-				if( i==51 || i==52 || i==58 ) continue;
-				for(int j=0; j<10; j++)	chain->Add(Form("/raid2/w/ykao/simulation/pptt_%d/Events/run_20k_%d_%d/tag_1_delphes_events.root",i,i,j));
+				if( i==52 ) continue;
+				for(int j=0; j<10; j++){
+					if( i==55 && j==9 ) continue;
+					chain->Add(Form("/raid2/w/ykao/simulation/pptt_%d/Events/run_20k_%d_%d/tag_1_delphes_events.root",i,i,j));
+				}
 			}
 		}
 	}
 	if(PROCESS=="ppvv"){
-		if(PRESELECTION==1){//apply on the events w/o preselection
+		if(PRESELECTION==0 || PRESELECTION==1){//apply on the events w/o preselection
 			for(int j=0; j<10; j++)	chain->Add(Form("/raid1/w/ykao/simulation/ppvv_jet_matching/Events/run_1M_%d/tag_1_delphes_events.root",j));
 			for(int i=1; i<3; i++){
 				for(int j=0; j<10; j++)	chain->Add(Form("/raid1/w/ykao/simulation/ppvv_0%d/Events/run_100k_0%d_%d/tag_1_delphes_events.root",i,i,j));
@@ -243,7 +244,14 @@ void importEvents(std::vector<MyEvent> &vec, ExRootTreeReader *TreeReader){
 			particle.status = genparticle->Status;
 			particle.PID    = genparticle->PID;
 			particle.pt     = genparticle->PT;
-			event.GenHT    += genparticle->PT;
+			
+			int status = genparticle->Status;
+			int PID = genparticle->PID;
+			//if(i==0) cout<<"##### "<<"Entries = "<<entry+1<<" #####"<<endl;
+			//printf("Status = %d, PID = %d, PT=%6.2f\n", status, PID, particle.pt);
+
+			if((abs(PID)==1 || abs(PID)==2 || abs(PID)==3 || abs(PID)==4 || abs(PID)==5 || abs(PID)==21)) event.GenHT += genparticle->PT;
+
 			event.GenParticles.push_back(particle);
 		}
 		
@@ -258,19 +266,20 @@ void importEvents(std::vector<MyEvent> &vec, ExRootTreeReader *TreeReader){
 
 
 //#############################################
-//### Initialization & Selection Cuts
+//### Declare Hist/Ntuple to Store Wanted INFO
 //#############################################
 TH1D *hist_Ori[NUM_hist];//before cuts 
 TH1D *hist_Cut[NUM_hist];//after cuts 
 TH1D *hist_Nm1[NUM_hist];//N-1 plots 
 TNtuple *ntuple_Ori[NUM_hist];
+TNtuple *ntuple_Nm1[NUM_hist];
+TNtuple *ntuple_Cut[NUM_hist];
 TNtuple *ntuple_Ori_HL;
-//TLine *CutLine[NUM_CUT];//the cut lines
-//int CutLineColor = kBlack;
+TNtuple *ntuple_Cut_HL;
 
-int    n_bin[NUM_hist]={10,30,20,20,20,20,20,20,12,U_MASS-L_MASS,100,16,16};
-double l_bin[NUM_hist]={0,0,0,0,0,0,0,0,0,L_MASS,0,-8,-8};
-double h_bin[NUM_hist]={10,30, 1000,2000, 1000,7000,1500,8000,12,U_MASS,1600,8,8};
+int    n_bin[NUM_hist]={10,30,120,120,120,280,120,320,12,U_MASS-L_MASS,80,16,16,280};
+double l_bin[NUM_hist]={ 0, 0, 0, 0, 0, 0, 0, 0, 0,		  L_MASS, 0,-8,-8, 0};
+double h_bin[NUM_hist]={10,30,3000,3000,3000,7000,3000,8000,12,U_MASS,2000,8,8,7000};
 
 //#############################################
 //### Miscellaneous Functions
@@ -280,6 +289,7 @@ const char *message;
 void INFOLOG(const char *message){
 	LOGFile = fopen("INFOLOG","a");
 	fputs(Form("%s\n",message),LOGFile);
+	std::cout<<message<<std::endl;
 	fclose(LOGFile);
 }
 void ListSelectionCuts(std::vector<double> factors){

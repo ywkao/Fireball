@@ -7,6 +7,7 @@
 #include "ExRootAnalysis/ExRootTreeReader.h"
 #include "ExRootAnalysis/ExRootTreeBranch.h"
 #include "ana_delphes.h"
+#include "savingPath.h"
 
 #include <TFile.h>
 #include <TCanvas.h>
@@ -19,43 +20,37 @@
 #include <TMath.h>
 using namespace std;
 
-const char *savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace/skimmed";
-//const char *PREFIX = "/afs/cern.ch/user/y/ykao/work/fireball/01source/simulation_delphes_";
+//const char *savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace/skimmed";
 const char *PREFIX = "/raid1/w/ykao/01source/simulation_delphes_";
 const char *SUFFIX;
 char *PROCESS;
 const char *path;
 
 int main(int argc, char *argv[]){
-	PRESELECTION=1;
-	PROCESS = argv[1]; TAIL = atoi(argv[2]);//0==.root
+	//### Load data ###//
+	PROCESS = argv[1];
+	TAIL = atoi(argv[2]);
+	PRESELECTION = atoi(argv[3]);
 	if(TAIL==0) SUFFIX = ".root";
 	if(TAIL==1) SUFFIX = "_jet_matching.root";
-	path = Form("%s%s%s",PREFIX,PROCESS,SUFFIX);
-
-	message = Form("[INFO] Importing: %s", path); INFOLOG(message);
-	std::cout<<"Loading: "<<path<<std::endl;
-
-	TChain *chain = new TChain("Delphes");
-	if((string)PROCESS=="pptt") ChainingEvents("pptt",chain);
+	
+	TChain *chain = new TChain("Delphes"); message = Form("[INFO] Importing root files for: %s", PROCESS); INFOLOG(message);
+	if((string)PROCESS=="pptt") 	  ChainingEvents("pptt",chain);
 	else if((string)PROCESS=="ppvv")  ChainingEvents("ppvv",chain);
 	else if((string)PROCESS=="ppvtt") ChainingEvents("ppvtt",chain);
 	else if((string)PROCESS=="ppvvv") ChainingEvents("ppvvv",chain);
-	else chain->Add(path);
+	else {path = Form("%s%s%s",PREFIX,PROCESS,SUFFIX); chain->Add(path);}
 	ExRootTreeReader *TreeReader = new ExRootTreeReader(chain);
 	importEvents(vec,TreeReader);
 
-	X 	  = Xsec.GetCrossSection(PROCESS); 
-	Err_X = Xsec.GetCrossSectionErr(PROCESS);
+	X 	    = Xsec.GetCrossSection(PROCESS); 
+	Err_X   = Xsec.GetCrossSectionErr(PROCESS);
 	message = Form("[INFO] Cross-section= %f +/- %f", X, Err_X); INFOLOG(message);
 
 	//### Selection Cuts ###//
 	vector<double> factors;
-	//double list01[9]={1,0,0,0,0,500,0,0,0};
-	double list01[9]={2,6,30,40,20,1200,50,1400,0};
-	//double list02[9]={2,6,30,40,20,1200,50,1400,0};
-	std::vector<double>::iterator it;//to store the optimized selection cuts
-	factors.insert(factors.begin(),list01,list01+9);
+	double list[9]={2,6,30,40,20,800,50,0,0};
+	factors.insert(factors.begin(),list,list+9);
 
 	//### Initialization ###//
 	TFile *fout = new TFile(Form("%s/result_%s.root",savingPath,PROCESS),"recreate");
@@ -64,13 +59,15 @@ int main(int argc, char *argv[]){
 		hist_Cut[k] = new TH1D(Form("Cut_%s",histName[k]),"",n_bin[k],l_bin[k],h_bin[k]); hist_Cut[k] -> Sumw2();
 		hist_Nm1[k] = new TH1D(Form("N-1_%s",histName[k]),"",n_bin[k],l_bin[k],h_bin[k]); hist_Nm1[k] -> Sumw2();
 		ntuple_Ori[k] = new TNtuple(Form("ntuple_Ori_%s",histName[k]),"","quantity");
+		ntuple_Cut[k] = new TNtuple(Form("ntuple_Cut_%s",histName[k]),"","quantity");
+		ntuple_Nm1[k] = new TNtuple(Form("ntuple_Nm1_%s",histName[k]),"","quantity");
 		if(k==0) ntuple_Ori_HL = new TNtuple("ntuple_Ori_HL","","LPT:HT");
+		if(k==0) ntuple_Cut_HL = new TNtuple("ntuple_Cut_HL","","LPT:HT");
 	}
 
 	//### Loop over "Full Cut" & "N-1 Cuts" ###//
 	double CUT[NUM_CUT];
 	for(int N=0; N<NUM_CUT+1; N++){
-		cout<<"Processing: "<<N+1<<"/"<<NUM_CUT+1<<endl;
 		if(N==0) for(int k=0; k<NUM_CUT; k++) CUT[k] = factors.at(k);//for full cut
 		else{//for N-1 Cuts
 			for(int k=0; k<NUM_CUT; k++){
@@ -88,19 +85,15 @@ int main(int argc, char *argv[]){
 		double CUT_ST		 = CUT[7];
 		double CUT_Num_boson = CUT[8];
 	
-		double eff, yield, Err_eff, Err_yield;
-		double count={0.};
-		int TagDieOut={0};
-		
+		double eff, yield, Err_eff, Err_yield, weighting = 1;//double weighting = L*pb2fb*X[k]/(double)vec.size();
+		double count={0.}; int TagDieOut={0};
+
 		//### Storing particle info & Apply selection cuts
-		//double weighting = L*pb2fb*X[k]/(double)vec.size();
-		double weighting = 1;
-		bool pass;
 		for( std::vector<MyEvent>::iterator it=vec.begin(); it!=vec.end(); it++){
 
-			//if(PRESELECTION==1 && !it->PreSelectionPass) continue;
+			if(PRESELECTION==1 && !it->PreSelectionPass) continue;
 
-			double Num_lep = 0, Num_jet = 0, SPT_lep = 0, SPT_jet = 0, TOT_MET = 0, ST = 0;
+			double Num_lep = 0, Num_jet = 0, SPT_lep = 0, SPT_jet = 0, TOT_MET = 0, ST = 0, GenHT = 0;
 			double SPT_lep_woPTcut = 0, SPT_jet_woPTcut = 0, ST_woPTcut = 0;
 			std::vector<double> PT_lep;        PT_lep.clear();
 			std::vector<double> PT_jet;        PT_jet.clear();
@@ -141,6 +134,12 @@ int main(int argc, char *argv[]){
 			//ST
 			ST = SPT_lep + SPT_jet + TOT_MET;
 			ST_woPTcut = SPT_lep_woPTcut + SPT_jet_woPTcut + TOT_MET;
+			//Gen_HT
+			GenHT = it->GenHT;
+			//for(int i=0; i < it->GenParticles.size(); i++){
+			//	int PID = it->GenParticles[i].PID;
+			//	if((abs(PID)==1 || abs(PID)==2 || abs(PID)==3 || abs(PID)==4 || abs(PID)==5 || abs(PID)==21)) GenHT += it->GenParticles[i].pt;
+			//}
 
 			if(N==0){//Store the original info once!
 				hist_Ori[0] -> Fill((it->Electrons.size()+it->Muons.size()),weighting);
@@ -150,6 +149,7 @@ int main(int argc, char *argv[]){
 				hist_Ori[6] -> Fill(TOT_MET,weighting);
 				hist_Ori[7] -> Fill(ST_woPTcut,weighting);
 				hist_Ori[8] -> Fill(it->H_Bosons.size(),weighting);
+				hist_Ori[13]-> Fill(GenHT,weighting);
 				for(int i=0; i<PT_lep.size(); i++) hist_Ori[2] -> Fill(PT_lep.at(i),weighting);
 				for(int i=0; i<PT_jet.size(); i++) hist_Ori[3] -> Fill(PT_jet.at(i),weighting);
 				for(int i=0; i<MASS_boson.size(); i++)    hist_Ori[9]  -> Fill(MASS_boson.at(i),weighting);
@@ -164,6 +164,7 @@ int main(int argc, char *argv[]){
 				ntuple_Ori[6] -> Fill(TOT_MET);
 				ntuple_Ori[7] -> Fill(ST_woPTcut);
 				ntuple_Ori[8] -> Fill((double)(it->H_Bosons.size()));
+				ntuple_Ori[13]-> Fill(GenHT);
 				ntuple_Ori_HL -> Fill(SPT_lep_woPTcut, SPT_jet_woPTcut);
 				for(int i=0; i<PT_lep.size(); i++) ntuple_Ori[2] -> Fill(PT_lep.at(i));
 				for(int i=0; i<PT_jet.size(); i++) ntuple_Ori[3] -> Fill(PT_jet.at(i));
@@ -189,12 +190,30 @@ int main(int argc, char *argv[]){
 				hist_Cut[6] -> Fill(TOT_MET,weighting);
 				hist_Cut[7] -> Fill(ST,weighting);
 				hist_Cut[8] -> Fill(it->H_Bosons.size(),weighting);
+				hist_Cut[13]-> Fill(GenHT,weighting);
 				for(int i=0; i<PT_lep.size(); i++) if(PT_lep.at(i) > CUT_PT_lep) hist_Cut[2] -> Fill(PT_lep.at(i),weighting);
 				for(int i=0; i<PT_jet.size(); i++) if(PT_jet.at(i) > CUT_PT_jet) hist_Cut[3] -> Fill(PT_jet.at(i),weighting);
 				for(int i=0; i<MASS_boson.size(); i++)    hist_Cut[9]  -> Fill(MASS_boson.at(i),weighting);
 				for(int i=0; i<PT_chosenJet.size(); i++)  hist_Cut[10] -> Fill(PT_chosenJet.at(i),weighting);
 				for(int i=0; i<Eta_chosenJet.size(); i++) hist_Cut[11] -> Fill(Eta_chosenJet.at(i),weighting);
 				for(int i=0; i<Phi_chosenJet.size(); i++) hist_Cut[12] -> Fill(Phi_chosenJet.at(i),weighting);
+
+				ntuple_Cut[0] -> Fill(Num_lep);
+    			ntuple_Cut[1] -> Fill(Num_jet);
+    			ntuple_Cut[4] -> Fill(SPT_lep);
+    			ntuple_Cut[5] -> Fill(SPT_jet);
+				ntuple_Cut[6] -> Fill(TOT_MET);
+				ntuple_Cut[7] -> Fill(ST);
+				ntuple_Cut[8] -> Fill((double)it->H_Bosons.size());
+				ntuple_Cut[13]-> Fill(GenHT);
+				ntuple_Cut_HL -> Fill(SPT_lep, SPT_jet);
+				for(int i=0; i<PT_lep.size(); i++) if(PT_lep.at(i) > CUT_PT_lep) ntuple_Cut[2] -> Fill(PT_lep.at(i));
+				for(int i=0; i<PT_jet.size(); i++) if(PT_jet.at(i) > CUT_PT_jet) ntuple_Cut[3] -> Fill(PT_jet.at(i));
+				for(int i=0; i<MASS_boson.size(); i++)    ntuple_Cut[9]  -> Fill(MASS_boson.at(i));
+				for(int i=0; i<PT_chosenJet.size(); i++)  ntuple_Cut[10] -> Fill(PT_chosenJet.at(i));
+				for(int i=0; i<Eta_chosenJet.size(); i++) ntuple_Cut[11] -> Fill(Eta_chosenJet.at(i));
+				for(int i=0; i<Phi_chosenJet.size(); i++) ntuple_Cut[12] -> Fill(Phi_chosenJet.at(i));
+
 				count += 1.;
 			} else{//for N-1 cuts
 				if(N-1==0) hist_Nm1[0] -> Fill(Num_lep,weighting);
@@ -210,15 +229,30 @@ int main(int argc, char *argv[]){
 				if(N-1==10) for(int i=0; i<PT_chosenJet.size(); i++)  hist_Nm1[10] -> Fill(PT_chosenJet.at(i),weighting);
 				if(N-1==11) for(int i=0; i<Eta_chosenJet.size(); i++) hist_Nm1[11] -> Fill(Eta_chosenJet.at(i),weighting);
 				if(N-1==12) for(int i=0; i<Phi_chosenJet.size(); i++) hist_Nm1[12] -> Fill(Phi_chosenJet.at(i),weighting);
+
+				if(N-1==0) ntuple_Nm1[0] -> Fill(Num_lep);
+				if(N-1==1) ntuple_Nm1[1] -> Fill(Num_jet);
+				if(N-1==4) ntuple_Nm1[4] -> Fill(SPT_lep);
+				if(N-1==5) ntuple_Nm1[5] -> Fill(SPT_jet);
+				if(N-1==6) ntuple_Nm1[6] -> Fill(TOT_MET);
+				if(N-1==7) ntuple_Nm1[7] -> Fill(ST);
+				if(N-1==8) ntuple_Nm1[8] -> Fill((double)it->H_Bosons.size());
+				if(N-1==2) for(int i=0; i<PT_lep.size(); i++) if(PT_lep.at(i) > CUT_PT_lep) ntuple_Nm1[2] -> Fill(PT_lep.at(i));
+				if(N-1==3) for(int i=0; i<PT_jet.size(); i++) if(PT_jet.at(i) > CUT_PT_jet) ntuple_Nm1[3] -> Fill(PT_jet.at(i));
+				if(N-1==9) for(int i=0; i<MASS_boson.size(); i++)    ntuple_Nm1[9]  -> Fill(MASS_boson.at(i));
+				if(N-1==10) for(int i=0; i<PT_chosenJet.size(); i++)  ntuple_Nm1[10] -> Fill(PT_chosenJet.at(i));
+				if(N-1==11) for(int i=0; i<Eta_chosenJet.size(); i++) ntuple_Nm1[11] -> Fill(Eta_chosenJet.at(i));
+				if(N-1==12) for(int i=0; i<Phi_chosenJet.size(); i++) ntuple_Nm1[12] -> Fill(Phi_chosenJet.at(i));
 			}
 		}//end of iterator over events
-		if(count==0) {count=1; TagDieOut=1; } // to estimate the upper bound of yield for zero-count processes
-		eff = count / (double)vec.size(); 
-		Err_eff = sqrt( eff*(1-eff)/ (double)vec.size() );
-		yield = L*pb2fb*X*eff; 
-		Err_yield = sqrt( pow(Err_X/X,2) + pow(Err_eff/eff,2) )*yield;//relative_err times yield
 
 		if(N==0){//for full cut
+			if(count==0) {count=1; TagDieOut=1; } // to estimate the upper bound of yield for zero-count processes
+			eff       = count / (double)vec.size(); 
+			Err_eff   = sqrt( eff*(1-eff)/ (double)vec.size() );
+			yield     = L*pb2fb*X*eff; 
+			Err_yield = sqrt( pow(Err_X/X,2) + pow(Err_eff/eff,2) )*yield;//relative_err times yield
+
 			message = Form("\nNEvents = %d; Factor = %f", vec.size(), L*pb2fb*X/(double)vec.size());
 			INFOLOG(message);
 			message = Form("Events = %7.0f +/- %10.4f (%4.2f%)", count,sqrt(count*(1-eff)),eff*sqrt((1-eff)/count)*100);

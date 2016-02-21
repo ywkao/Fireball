@@ -13,10 +13,10 @@ const double ppvvvtt = 0.0001468,Err_ppvvvtt = 3.2e-07;
 //re-scaled cross sections
 const double fireball_bp_1TeV = 0.051   , Err_fireball_bp_1TeV = 0.001;
 const double fireball_bp_2TeV = 0.000177, Err_fireball_bp_2TeV = 4e-06;
-//const double pptt    = 815.96   ,Err_pptt    = 45.51;
-const double pptt    = 9.371    ,Err_pptt    = 0.00705;
-//const double ppvv    = 192.4    ,Err_ppvv    = 4.1;
-const double ppvv    = 0.1642   ,Err_ppvv    = 0.00022;
+const double pptt    = 815.96   ,Err_pptt    = 45.51;
+const double ppvv    = 192.4    ,Err_ppvv    = 4.1;
+//const double pptt    = 9.371    ,Err_pptt    = 0.00705;
+//const double ppvv    = 0.1642   ,Err_ppvv    = 0.00022;
 const double ppvtt   = 1.77     ,Err_ppvtt   = 0.10;
 const double ppvvv   = 0.621    ,Err_ppvvv   = 0.073;
 const double ppvvtt  = 0.0219   ,Err_ppvvtt  = 0.0013;
