@@ -1,0 +1,32 @@
+### 06 May 2016, yu-wei kao ###
+
+
+MC simulation  ->  Determine Selection Cuts ->  Skimming  ->  Analysis
+
+
+=====================
+=== MC simulation ===
+=====================
+multiplicity: determine the multiplicity probability distribution for fireball process
+
+
+======================
+=== Selection Cuts ===
+======================
+GA: investigate the selection cuts.
+
+
+================
+=== Analysis ===
+================
+ana_yield.C:
+    -list tables for thesis document
+    -calculate important quantities like yields, significance, uncertainty of cross section
+    -generate the input file for upper limit calculation
+
+significance: calculate the significance and p-values for various b' masses
+
+systematics:  plot the cross section with the consideration of systematic uncertainty
+
+upperlimit:   plot the exclusion plots.
+

@@ -1,0 +1,26 @@
+# Simple counting experiment, with one signal and a few background processes 
+imax 1  number of channels
+jmax 4  number of backgrounds
+kmax 10  number of nuisance parameters (sources of systematical uncertainties)
+------------
+# we have just one channel
+bin 1
+observation 340 
+------------
+bin              1         1       1        1        1   
+process       fireball    pptt    ppvv    ppvtt    ppvvv 
+process          0         1       2        3        4   
+rate           43.63     119     1.52    25.63     1.41
+------------
+X_fireball     lnN 1.0012 -        -        -        -
+X_pptt         lnN        - 1.0007 -        -        -        
+X_ppvv         lnN        -        - 1.0010 -        -        
+X_ppvtt        lnN        -        -        - 1.0016 -        
+X_ppvvv        lnN        -        -        -        - 1.0012 
+
+stat_fireball  lnN 1.0230 -        -        -        -
+stat_pptt      lnN        - 1.0985 -        -        -        
+stat_ppvv      lnN        -        - 1.3015 -        -        
+stat_ppvtt     lnN        -        -        - 1.1722 -        
+stat_ppvvv     lnN        -        -        -        - 1.3524 
+------------
