@@ -9,15 +9,16 @@
 #include <iomanip>
 
 #include "ana_draw.h"
+//#include "ana_data.h"
 
 using namespace std;
 const double CUT[NUM] = {2,6,30,40,20,1200,50,1400,0};
 const int RebinFactor = 8;
 
-//void ana_draw(int SIG){
 void ana_draw(){
 
-    SettingLegend();
+    SetLegend(legend_MC_sig, 1, 43, 16, 0 ,0, 0);
+    SetLegend(legend_MC_bkg, 2, 43, 16, 0 ,0, 0);
 	//if(SIG==1) importHist("fireball_bp_1TeV");
 	//if(SIG==2) importHist("fireball_bp_2TeV");
 	importHist("fireball_2TeV");
@@ -70,7 +71,7 @@ void ana_draw(){
                 hist_err_nm1[k]->SetFillColor(kGray);
                 hist_err_ori[k]->SetLineColor(kGray);
                 hist_err_nm1[k]->SetLineColor(kGray);
-                //if(k==0) legend->AddEntry(hist_err_nm1[0],"Bkg. Errors","f");
+                //if(k==0) legend_MC_bkg->AddEntry(hist_err_nm1[0],"Bkg. Errors","f");
             }else if(i!=vec.size()-1){
                 hist_err_ori[k] -> Add(vec.at(i).hist_Ori[k]);
                 hist_err_nm1[k] -> Add(vec.at(i).hist_Nm1[k]);
@@ -190,7 +191,8 @@ void ana_draw(){
         //hist_err_ori[k]->Draw("E2,same");
 		vec.at(0).hist_Ori[k]->Draw("hist,same");//"hf,same"
 		vec.at(9).hist_Ori[k]->Draw("hist,same");//"hf,same"
-		legend->Draw("same"); leg->Draw("same");
+        legend_MC_sig->Draw("same");
+		legend_MC_bkg->Draw("same");
 		binMin = stack_ori[k]->GetXaxis()->GetXmin();
 		binMax = stack_ori[k]->GetXaxis()->GetXmax();
 		text->DrawLatex((binMax-binMin)*0.01,3e+07,"MC Simulation from MadGraph5");
@@ -198,8 +200,8 @@ void ana_draw(){
 	    //axis->DrawAxis(0,MAX_ori,binMax,MAX_ori,0,binMax,510,"-");
 	    //axis->DrawAxis(binMax,MIN,binMax,MAX_ori,MIN,MAX_ori,510,"+");
 		can->SaveAs(Form("./output/stack_ori_%s.png",histName[k]));
-		can->SaveAs(Form("./output/stack_ori_%s.pdf",histName[k]));
-		can->SaveAs(Form("./output/stack_ori_%s.root",histName[k]));
+		//can->SaveAs(Form("./output/stack_ori_%s.pdf",histName[k]));
+		//can->SaveAs(Form("./output/stack_ori_%s.root",histName[k]));
 
         stack_nm1[k]->SetMaximum(MAX_nm1);
         stack_nm1[k]->SetMinimum(MIN);
@@ -207,7 +209,8 @@ void ana_draw(){
         //hist_err_nm1[k]->Draw("E2,same");
 		vec.at(0).hist_Nm1[k]->Draw("hist,same");
 		vec.at(9).hist_Nm1[k]->Draw("hist,same");//"hf,same"
-		legend->Draw("same"); leg->Draw("same");
+        legend_MC_sig->Draw("same");
+		legend_MC_bkg->Draw("same");
 		line->DrawLine(CUT[k],0,CUT[k],2e+04);
 		line->DrawLine(CUT[k],0,CUT[k],stack_nm1[k]->GetMaximum());
 		binMin = stack_nm1[k]->GetXaxis()->GetXmin();
@@ -217,12 +220,7 @@ void ana_draw(){
 	    //axis->DrawAxis(0,MAX_nm1,binMax,MAX_nm1,0,binMax,510,"-");
 	    //axis->DrawAxis(binMax,MIN,binMax,MAX_nm1,MIN,MAX_nm1,510,"+");
 		can->SaveAs(Form("./output/stack_nm1_%s.png",histName[k]));
-		can->SaveAs(Form("./output/stack_nm1_%s.pdf",histName[k]));
-		can->SaveAs(Form("./output/stack_nm1_%s.root",histName[k]));
+		//can->SaveAs(Form("./output/stack_nm1_%s.pdf",histName[k]));
+		//can->SaveAs(Form("./output/stack_nm1_%s.root",histName[k]));
 	}
 }
-
-        //printf("%16s: N = %7.0f, L*X/N = %5.4f, X-sec = %7.4f \u00B1 %8.6f (%6.4f), Yield = %8.4f \u00B1 %8.4f (%6.4f), Eff = %8.7f \u00B1 %8.7f\n",
-        //        it->Name, it->Entries, it->Factor, it->X, it->Err_X, it->Err_X/it->X,
-        //        it->Yield[2][0], it->Err_Yield[2][0], it->Err_Yield[2][0]/it->Yield[2][0], it->Eff[2][0], it->Err_Eff[2][0]);
-		//if(it!=vec.begin()) yield_bg += it->Yield;
