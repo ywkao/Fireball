@@ -1,0 +1,12 @@
+#!/bin/bash
+SIG=2
+Execution() {
+	DIR=`pwd`/$2
+	if [ ! -d ${DIR} ]; then mkdir ${DIR}; fi
+	root -l -b -q $1
+	#root -l $1
+}
+
+Execution ana_draw.C+ output
+
+./clean
