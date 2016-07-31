@@ -29,8 +29,11 @@ const double L=100.;
 const double pb2fb=1000.;
 const double L_MASS=60.;//mass lower bound for bonson candidates
 const double U_MASS=110.;//mass upper bound for bonson candidates
+const double ETA=2.4;//upper bound of fiducial region
 char *histName[NUM_hist]={"Num_lep","Num_jet","PT_lep","PT_jet","LPT","HT","MET","ST","Num_boson","M_boson","PT_chJet","Eta_chJet","Phi_chJet","Gen_HT"};
 
+const double KFACTOR1=1.56;//ppvv-like process
+const double KFACTOR2=1.69;//pptt-like process
 double X;
 double Err_X;
 int PRESELECTION;
@@ -126,6 +129,14 @@ void ChainingEvents(string PROCESS, TChain *&chain){
 			}
 		} else{
 			//chain->Add("/raid2/w/ykao/simulation/pptt_51/Events/run_20k_51_0/tag_1_delphes_events.root");
+			//for(int i=61; i<80; i++){
+			//	if(i==63||i==68||i==70) continue;
+			//	for(int j=0; j<10; j++)	chain->Add(Form("/raid2/w/ykao/simulation/pptt_%d/Events/run_20k_%d_%d/tag_1_delphes_events.root",i,i,j));
+			//}
+			//for(int i=81; i<85; i++){
+			//	for(int j=0; j<10; j++)	chain->Add(Form("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_%d/Events/run_50k_%d_%d/tag_1_delphes_events.root",i,i,j));
+			//}
+            
 			chain->Add("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_52/Events/run_100k_52_0/tag_1_delphes_events.root");
 			chain->Add("/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/pptt_52/Events/run_100k_52_1/tag_1_delphes_events.root");
 			for(int i=41; i<50; i++){
@@ -138,6 +149,7 @@ void ChainingEvents(string PROCESS, TChain *&chain){
 					chain->Add(Form("/raid2/w/ykao/simulation/pptt_%d/Events/run_20k_%d_%d/tag_1_delphes_events.root",i,i,j));
 				}
 			}
+
 		}
 	}
 	if(PROCESS=="ppvv"){
@@ -302,23 +314,49 @@ void ListSelectionCuts(std::vector<double> factors){
 }
 struct CrossSection {
 	double GetCrossSection(const char* Name){
-		if((string)Name=="pptt") 	return pptt;
-		if((string)Name=="ppvv")    return ppvv;
-		if((string)Name=="ppvtt")   return ppvtt;
-		if((string)Name=="ppvvv")   return ppvvv;
-		if((string)Name=="ppvvtt")  return ppvvtt;
-		if((string)Name=="pptttt")  return pptttt;
-		if((string)Name=="ppvvvv")  return ppvvvv;
-		if((string)Name=="ppvvvtt") return ppvvvtt;
+        if((string)Name=="fireball_bp_1TeV") return KFACTOR2*fireball_bp_1TeV;
+        if((string)Name=="fireball_bp_2TeV") return KFACTOR2*fireball_bp_2TeV;
+        if((string)Name=="fireball_1TeV"  )  return KFACTOR2*fireball_1TeV   ;
+        if((string)Name=="fireball_2TeV"  )  return KFACTOR2*fireball_2TeV   ;
+        if((string)Name=="fireball_1.1TeV")  return KFACTOR2*fireball_1p1TeV ;
+        if((string)Name=="fireball_1.2TeV")  return KFACTOR2*fireball_1p2TeV ;
+        if((string)Name=="fireball_1.3TeV")  return KFACTOR2*fireball_1p3TeV ;
+        if((string)Name=="fireball_1.4TeV")  return KFACTOR2*fireball_1p4TeV ;
+        if((string)Name=="fireball_1.5TeV")  return KFACTOR2*fireball_1p5TeV ;
+        if((string)Name=="fireball_1.6TeV")  return KFACTOR2*fireball_1p6TeV ;
+        if((string)Name=="fireball_1.7TeV")  return KFACTOR2*fireball_1p7TeV ;
+        if((string)Name=="fireball_1.8TeV")  return KFACTOR2*fireball_1p8TeV ;
+        if((string)Name=="fireball_1.9TeV")  return KFACTOR2*fireball_1p9TeV ;
+		if((string)Name=="pptt") 	return KFACTOR2*pptt;
+		if((string)Name=="ppvv")    return KFACTOR1*ppvv;
+		if((string)Name=="ppvtt")   return KFACTOR2*ppvtt;
+		if((string)Name=="ppvvv")   return KFACTOR1*ppvvv;
+		if((string)Name=="ppvvtt")  return KFACTOR2*ppvvtt;
+		if((string)Name=="pptttt")  return KFACTOR2*pptttt;
+		if((string)Name=="ppvvvv")  return KFACTOR1*ppvvvv;
+		if((string)Name=="ppvvvtt") return KFACTOR2*ppvvvtt;
 	}
 	double GetCrossSectionErr(const char* Name){
-		if((string)Name=="pptt") 	return Err_pptt;
-		if((string)Name=="ppvv")    return Err_ppvv;
-		if((string)Name=="ppvtt")   return Err_ppvtt;
-		if((string)Name=="ppvvv")   return Err_ppvvv;
-		if((string)Name=="ppvvtt")  return Err_ppvvtt;
-		if((string)Name=="pptttt")  return Err_pptttt;
-		if((string)Name=="ppvvvv")  return Err_ppvvvv;
-		if((string)Name=="ppvvvtt") return Err_ppvvvtt;
+        if((string)Name=="fireball_bp_1TeV") return KFACTOR2*Err_fireball_bp_1TeV;
+        if((string)Name=="fireball_bp_2TeV") return KFACTOR2*Err_fireball_bp_2TeV;
+        if((string)Name=="fireball_1TeV"  )  return KFACTOR2*Err_fireball_1TeV   ;
+        if((string)Name=="fireball_2TeV"  )  return KFACTOR2*Err_fireball_2TeV   ;
+        if((string)Name=="fireball_1.1TeV")  return KFACTOR2*Err_fireball_1p1TeV ;
+        if((string)Name=="fireball_1.2TeV")  return KFACTOR2*Err_fireball_1p2TeV ;
+        if((string)Name=="fireball_1.3TeV")  return KFACTOR2*Err_fireball_1p3TeV ;
+        if((string)Name=="fireball_1.4TeV")  return KFACTOR2*Err_fireball_1p4TeV ;
+        if((string)Name=="fireball_1.5TeV")  return KFACTOR2*Err_fireball_1p5TeV ;
+        if((string)Name=="fireball_1.6TeV")  return KFACTOR2*Err_fireball_1p6TeV ;
+        if((string)Name=="fireball_1.7TeV")  return KFACTOR2*Err_fireball_1p7TeV ;
+        if((string)Name=="fireball_1.8TeV")  return KFACTOR2*Err_fireball_1p8TeV ;
+        if((string)Name=="fireball_1.9TeV")  return KFACTOR2*Err_fireball_1p9TeV ;
+		if((string)Name=="pptt") 	return KFACTOR2*Err_pptt;
+		if((string)Name=="ppvv")    return KFACTOR1*Err_ppvv;
+		if((string)Name=="ppvtt")   return KFACTOR2*Err_ppvtt;
+		if((string)Name=="ppvvv")   return KFACTOR1*Err_ppvvv;
+		if((string)Name=="ppvvtt")  return KFACTOR2*Err_ppvvtt;
+		if((string)Name=="pptttt")  return KFACTOR2*Err_pptttt;
+		if((string)Name=="ppvvvv")  return KFACTOR1*Err_ppvvvv;
+		if((string)Name=="ppvvvtt") return KFACTOR2*Err_ppvvvtt;
 	}
 }; CrossSection Xsec;

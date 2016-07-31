@@ -8,6 +8,7 @@
 #include "ExRootAnalysis/ExRootTreeBranch.h"
 #include "ana_delphes.h"
 #include "savingPath.h"
+#include "cuts.h"
 
 #include <TFile.h>
 #include <TCanvas.h>
@@ -21,6 +22,9 @@
 using namespace std;
 
 //const char *savingPath = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/Delphes/workspace/skimmed";
+const char *PREFIX_fireball = "/afs/cern.ch/user/y/ykao/work/MG5_aMC_v2_2_3/simulation/PROC_4Gen_1/Events/run_";
+const char *SUFFIX_tag1 = "tag_1_delphes_events.root";
+const char *SUFFIX_tag2 = "tag_2_delphes_events.root";
 const char *PREFIX = "/raid1/w/ykao/01source/simulation_delphes_";
 const char *SUFFIX;
 char *PROCESS;
@@ -39,6 +43,17 @@ int main(int argc, char *argv[]){
 	else if((string)PROCESS=="ppvv")  ChainingEvents("ppvv",chain);
 	else if((string)PROCESS=="ppvtt") ChainingEvents("ppvtt",chain);
 	else if((string)PROCESS=="ppvvv") ChainingEvents("ppvvv",chain);
+	else if((string)PROCESS=="fireball_1TeV"  ){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag2); chain->Add(path);}
+	else if((string)PROCESS=="fireball_2TeV"  ){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.1TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.2TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.3TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag2); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.4TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.5TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.6TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.7TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.8TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
+	else if((string)PROCESS=="fireball_1.9TeV"){path = Form("%s%s/%s",PREFIX_fireball,PROCESS,SUFFIX_tag1); chain->Add(path);}
 	else {path = Form("%s%s%s",PREFIX,PROCESS,SUFFIX); chain->Add(path);}
 	ExRootTreeReader *TreeReader = new ExRootTreeReader(chain);
 	importEvents(vec,TreeReader);
@@ -49,7 +64,7 @@ int main(int argc, char *argv[]){
 
 	//### Selection Cuts ###//
 	vector<double> factors;
-	double list[9]={2,6,30,40,20,800,50,0,0};
+	//double list[9]={2,6,30,40,20,800,50,0,0};
 	factors.insert(factors.begin(),list,list+9);
 
 	//### Initialization ###//
@@ -104,12 +119,12 @@ int main(int argc, char *argv[]){
 
 			//lep
 			for(int i=0; i < it->Electrons.size(); i++){
-				if(it->Electrons[i].pt > CUT_PT_lep){ Num_lep += 1; SPT_lep += it->Electrons[i].pt; }
+				if((abs(it->Electrons[i].eta)< ETA) && (it->Electrons[i].pt > CUT_PT_lep)){ Num_lep += 1; SPT_lep += it->Electrons[i].pt; }
 				SPT_lep_woPTcut += it->Electrons[i].pt;
 				PT_lep.push_back(it->Electrons[i].pt);
 			}
 			for(int i=0; i < it->Muons.size(); i++){
-				if(it->Muons[i].pt > CUT_PT_lep){ Num_lep += 1; SPT_lep += it->Muons[i].pt; }
+				if(abs((it->Muons[i].eta) < ETA) && (it->Muons[i].pt > CUT_PT_lep)){ Num_lep += 1; SPT_lep += it->Muons[i].pt; }
 				SPT_lep_woPTcut += it->Muons[i].pt;
 				PT_lep.push_back(it->Muons[i].pt);
 			}
@@ -117,7 +132,7 @@ int main(int argc, char *argv[]){
 			for(int i=0; i < it->METs.size(); i++) TOT_MET += it->METs[i].pt;
 			//jet
 			for(int i=0; i < it->Jets.size(); i++){
-				if(it->Jets[i].pt > CUT_PT_jet){ Num_jet += 1; SPT_jet += it->Jets[i].pt; }
+				if(abs((it->Jets[i].eta) < ETA) && (it->Jets[i].pt > CUT_PT_jet)){ Num_jet += 1; SPT_jet += it->Jets[i].pt; }
 				SPT_jet_woPTcut += it->Jets[i].pt;
 				PT_jet.push_back(it->Jets[i].pt);
 			}
