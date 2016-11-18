@@ -1,0 +1,4 @@
+#!/bin/bash
+make && ./ana_delphes && root -l -b -q macro/LeafDraw.C
+#make && ./ana_delphes 
+
