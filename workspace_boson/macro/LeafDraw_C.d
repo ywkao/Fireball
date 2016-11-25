@@ -64,6 +64,13 @@
 ./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TVectorFfwd.h
 ./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TVectorDfwd.h
 ./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TFitResultPtr.h
-./macro/LeafDraw_C.so: /home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/./header/ana_delphes.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TLatex.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TText.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TLegend.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TPave.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TBox.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/TStyle.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/./header/LeafDraw.h
+./macro/LeafDraw_C.so: /home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/./header/ExtractParticleID.h
 ./macro/LeafDraw_C.so: /home/xiaokao/Desktop/root/include/cintdictversion.h /home/xiaokao/Desktop/root/include/RVersion.h
 LeafDraw_C__ROOTBUILDVERSION= 5.34/32

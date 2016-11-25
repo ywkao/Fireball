@@ -1,4 +1,5 @@
 #!/bin/bash
-make && ./ana_delphes && root -l -b -q macro/LeafDraw.C
-#make && ./ana_delphes 
+if [[ $1 == "-d" ]]; then root -l -b -q macro/LeafDraw.C+;
+    else make && ./ana_delphes && root -l -b -q macro/LeafDraw.C+;
+fi
 
