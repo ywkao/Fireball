@@ -10,56 +10,103 @@
 #include "TStyle.h"
 #include "../header/LeafDraw.h"
 #include "../header/ExtractParticleID.h"
+#include "../header/ExtractMassFromFilename.h"
+#include "../header/FileGenerator.h"
+#include "../header/Normalization.h"
+#include "../header/BosonMultiplicityTable.h"
 using namespace std;
 
-//=== Delare Functions and Varibable ===//
+//=== Delare Functions and Global Varibable ===//
 string GetXtitle(const char*);
 void FillHist(TH1D* , double );
 void DrawHist(TH1D* );
 void DrawHistTogether(TH1D*, TH1D* , TH1D* );
-void DrawHistSetting(TH1D*&, int, int, int, int, int);
+void DrawHistSetting(TH1D*, int, int, int, int, int);
 void Group_SetBranchAddress(TChain *, MyGenParticle &, const char*);
 void Group_FillHist(MyGenParticle &);
+void Group_NormalizeHist(MyGenParticle &);
 void Group_DrawHist(MyGenParticle &);
 void Group_DrawHistTogether(MyGenParticle &, MyGenParticle &, MyGenParticle &);
-const char * DirOutput = "/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/tmp";
 TCanvas    * c1        = new TCanvas("c1","", 800, 600);
 TPad       * pad       = new TPad("pad","",0,0,1,1);
-//--------------------------------------------------//
-//=== Main Function ===//
-void LeafDraw(){
+double factor, relative_error_xsec, total_generated_entries;
+
+string DirOutput;
+const char * DirInput  = "/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/skimmed";
+
+bool SavePlots = false;
+bool TestOnly  = false;
+
+//=================================================================//
+//========================= Main Function =========================//
+//=================================================================//
+void LeafDraw(const char* filename){
     gStyle->SetOptStat(0);
 
     TChain *chain = new TChain("mytree");
-    chain->Add("/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/result.root");
+    if((string)filename=="/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/result.root"){
+        DirOutput = "/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/tmp";
+        chain->Add(filename);
+        TestOnly = true;
+    } else{ //=== For simulated fireball process w/ vaious masses ===//
+        DirOutput = Form("/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/output/%s",filename);
+        chain->Add(Form("%s/%s.root"  ,DirInput,filename));
+        chain->Add(Form("%s/%s_x.root",DirInput,filename));
+        if((string)filename=="result_run_fireball_1TeV") SavePlots = true;
+        if((string)filename=="result_run_fireball_2TeV") SavePlots = true;
+    }
 
-    MyGenParticle VB("VB"), W("W"), Z("Z"), Jet("Jet"), Lep("Lep");// histogram is set well
+
+    MyGenParticle VB("VB"), W("W"), Z("Z"), GenJet("GenJet"), GenLep("GenLep");// histogram is set well
     Group_SetBranchAddress(chain, VB , "VB");
     Group_SetBranchAddress(chain, W  , "W" );
     Group_SetBranchAddress(chain, Z  , "Z" );
-    Group_SetBranchAddress(chain, Jet, "Jet");
-    Group_SetBranchAddress(chain, Lep, "Lep");
+    Group_SetBranchAddress(chain, GenJet, "GenJet");
+    Group_SetBranchAddress(chain, GenLep, "GenLep");
     
     for (int i=0; i<chain->GetEntries(); i++) {
         chain->GetEntry(i);
         Group_FillHist(VB);
         Group_FillHist(Z);
         Group_FillHist(W);
-        Group_FillHist(Lep);
-        Group_FillHist(Jet);
+        Group_FillHist(GenLep);
+        Group_FillHist(GenJet);
     }
 
+    //=== Make Boson Multiplicity Table ===//
+    if(!TestOnly)
+    BosonMultiplicity_SingleMass(ExtractMassFromFilename(filename), VB.hist_Multiplicity, Z.hist_Multiplicity, W.hist_Multiplicity);
+
+    //=== Normalization ===//
+    total_generated_entries = GenLep.hist_Multiplicity->GetEntries();
+    factor = L*pb2fb*Xsec.GetCrossSection("result", 1)/total_generated_entries;
+    relative_error_xsec = Xsec.GetCrossSectionErr( "result", 1 ) / Xsec.GetCrossSection( "result", 1 );// 1: apply K-factor
+    printf("factor = %f \n", factor);
+
+    //The function MC_Normalization would force hist increase 50 entries!!?
+    Group_NormalizeHist(VB);
+    Group_NormalizeHist(Z);
+    Group_NormalizeHist(W);
+    Group_NormalizeHist(GenLep);
+    Group_NormalizeHist(GenJet);
+
+    printf("Before Nor. = %f, After Nor. = %f\n", total_generated_entries, GenLep.hist_Multiplicity->GetEntries());
+
+    //=== Make Plots ===//
     Group_DrawHist(VB);
     Group_DrawHist(Z);
     Group_DrawHist(W);
-    Group_DrawHist(Lep);
-    Group_DrawHist(Jet);
+    Group_DrawHist(GenLep);
+    Group_DrawHist(GenJet);
 
     Group_DrawHistTogether(VB, Z, W);
 
 }
-//--------------------------------------------------//
-//===  Functions ===//
+
+
+//=================================================================//
+//========================= Aux. Function =========================//
+//=================================================================//
 void DrawHist(TH1D* hist){
     //=== Pad Setting ===//
     c1->cd();
@@ -74,11 +121,12 @@ void DrawHist(TH1D* hist){
     else hist->GetYaxis()->SetTitle( Form("Entries / %.0f [GeV]",hist->GetXaxis()->GetXmax()/(double)hist->GetNbinsX()) );
     hist->SetTitleOffset(1.6, "Y");
     //=== Drawing ===//
-    hist->Draw();
+    hist->Draw("hist");
     TLatex * latex = new TLatex(0,0,"");
     latex -> SetNDC();
 	latex -> SetTextFont(43);
     latex -> SetTextSize(22);
+    //printf("GetMeanValue = %f\n", GetMeanValue(hist));
     latex -> DrawText(0.68 , 0.72 , Form("Entries: %.0f" , hist->GetEntries()));
     latex -> DrawText(0.68 , 0.66 , Form("Mean:    %.2f" , hist->GetMean()));
     latex -> DrawText(0.68 , 0.60 , Form("RMS:     %.2f" , hist->GetStdDev()));
@@ -89,7 +137,7 @@ void DrawHist(TH1D* hist){
     latex -> DrawLatex(0.72 , 0.91,"L = 100 fb^{-1} (13TeV)");
 
     //hist->SetTitle("");
-    c1->SaveAs(Form("%s/%s.png", DirOutput, hist->GetName()));
+    if(SavePlots) c1->SaveAs(Form("%s/%s.png", DirOutput.c_str(), hist->GetName()));
 }
 void DrawHistTogether(TH1D* hist, TH1D* hist_1, TH1D* hist_2){
     //=== Pad Setting ===//
@@ -99,7 +147,6 @@ void DrawHistTogether(TH1D* hist, TH1D* hist_1, TH1D* hist_2){
     pad->SetTopMargin(0.1);
     pad->SetLeftMargin(0.12);
     //=== Title Setting ===//
-    printf("title = %s\n", hist->GetTitle());
     const char *Title = hist->GetTitle();
     hist->GetXaxis()->SetTitle( GetXtitle(Title).c_str() );
     if( (string)Title == "Multiplicity" || (string)Title == "Eta" || (string)Title == "Phi" ) hist->GetYaxis()->SetTitle( "Entries" );
@@ -109,11 +156,16 @@ void DrawHistTogether(TH1D* hist, TH1D* hist_1, TH1D* hist_2){
     DrawHistSetting(hist   , kRed     , 1 , 2 , kRed     , 3004);
     DrawHistSetting(hist_1 , kGreen+2 , 1 , 2 , kGreen+2 , 3004);
     DrawHistSetting(hist_2 , kBlue+1  , 1 , 2 , kBlue+1  , 3004);
-    if( (string)Title == "Multiplicity")
-    hist   -> SetMaximum(4500);
-    hist   -> Draw();
-    hist_1 -> Draw("same");
-    hist_2 -> Draw("same");
+    if( (string)Title == "Multiplicity"){
+        hist_2 -> Draw("hist"); hist_2->SetTitle("");//W
+        hist   -> Draw("hist,same");
+        hist_1 -> Draw("hist,same");
+        hist_2 -> Draw("hist,same");
+    } else{
+        hist   -> Draw("hist");
+        hist_1 -> Draw("hist,same");
+        hist_2 -> Draw("hist,same");
+    }
     TLegend * legend = new TLegend(0.65,0.60,0.80,0.85);
     legend->SetTextFont  ( 43 );
     legend->SetTextSize  ( 20 );
@@ -134,7 +186,7 @@ void DrawHistTogether(TH1D* hist, TH1D* hist_1, TH1D* hist_2){
     latex -> DrawLatex(0.72 , 0.91,"L = 100 fb^{-1} (13TeV)");
 
     hist->SetTitle("");
-    c1->SaveAs(Form("%s/Combined_%s.png", DirOutput, hist->GetName()));
+    if(SavePlots) c1->SaveAs(Form("%s/Combined_%s.png", DirOutput.c_str(), hist->GetName()));
 }
 string GetXtitle(const char* Title){
     string xtitle;
@@ -169,6 +221,15 @@ void Group_FillHist(MyGenParticle &Particle){
     FillHist( Particle.hist_Eta         , Particle.Eta          );
     FillHist( Particle.hist_Phi         , Particle.Phi          );
 }
+void Group_NormalizeHist(MyGenParticle &Particle){//Normalize each historgram
+    MC_Normalization( Particle.hist_Multiplicity, factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_Energy      , factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_Momentum    , factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_Momentum2   , factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_PT          , factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_Eta         , factor, relative_error_xsec );
+    MC_Normalization( Particle.hist_Phi         , factor, relative_error_xsec );
+}
 void Group_DrawHist(MyGenParticle &Particle){
     DrawHist( Particle.hist_Multiplicity );
     DrawHist( Particle.hist_Energy       );
@@ -187,7 +248,7 @@ void Group_DrawHistTogether(MyGenParticle &Particle, MyGenParticle &Particle1, M
     DrawHistTogether( Particle.hist_Eta         , Particle1.hist_Eta         , Particle2.hist_Eta         );
     DrawHistTogether( Particle.hist_Phi         , Particle1.hist_Phi         , Particle2.hist_Phi         );
 }
-void DrawHistSetting(TH1D *&hist, int lcolor, int lstyle, int lwidth, int fcolor, int style){
+void DrawHistSetting(TH1D *hist, int lcolor, int lstyle, int lwidth, int fcolor, int style){
 	hist->SetLineColor(lcolor);
 	hist->SetLineStyle(lstyle);
 	hist->SetLineWidth(lwidth);

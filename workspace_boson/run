@@ -1,5 +1,21 @@
 #!/bin/bash
-if [[ $1 == "-d" ]]; then root -l -b -q macro/LeafDraw.C+;
-    else make && ./ana_delphes && root -l -b -q macro/LeafDraw.C+;
-fi
+set -e
+DIR=/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace
 
+###=== for analysis ===###
+if [[ $1 == "all" ]]; then
+    ###--- MultiplicityTable ---###
+    echo "Mass [GeV] & Vector boson & Z boson & W boson\\\\" > ${DIR}/output/MultiplicityTable.txt
+    echo "\\hline" >> ${DIR}/output/MultiplicityTable.txt
+    ###--- Loop over root files---###
+    for filename in `ls ${DIR}/skimmed/ | grep -v _x | awk 'BEGIN{FS=".root"}{print $1}'`
+    do
+        if [[ ! -d ${DIR}/output/${filename} ]]; then mkdir ${DIR}/output/${filename}; fi
+        root -l -b -q macro/LeafDraw.C+\(\"${filename}\"\);
+    done
+
+###=== for test ===###
+elif [[ $1 == "-d" ]]; then root -l -b -q macro/LeafDraw.C+\(\"${DIR}/result.root\"\);
+else make && ./ana_delphes && root -l -b -q macro/LeafDraw.C+\(\"${DIR}/result.root\"\);
+
+fi

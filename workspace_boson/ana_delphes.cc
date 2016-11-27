@@ -15,7 +15,8 @@ int main()
     //=== Input Info ===//
     TChain *chain = new TChain("Delphes");
     //chain->Add("/home/xiaokao/Desktop/test/pool/tag_2_delphes_events.root");
-    chain->Add("/home/xiaokao/Desktop/MG5_aMC_v2_2_3/simulation/fireball_testing/Events/run_fireball_2.0TeV/tag_1_delphes_events.root");
+    //chain->Add("/home/xiaokao/Desktop/MG5_aMC_v2_2_3/simulation/fireball_testing/Events/run_fireball_2.0TeV/tag_1_delphes_events.root"); //pop out error message
+    chain->Add("/home/xiaokao/Desktop/MG5_aMC_v2_2_3/Delphes-3.2.0/workspace/check/tag_1_delphes_events.root");
 
     ExRootTreeReader *treeReader = new ExRootTreeReader(chain);
 
@@ -28,7 +29,8 @@ int main()
     //=== To Store ===//
     TFile *fout = new TFile("result.root","recreate");
     TTree *mytree =  new TTree("mytree","mytree");
-    MyGenParticle VB(mytree,"VB"), W(mytree,"W"), Z(mytree,"Z"), Jet(mytree,"Jet"), Lep(mytree,"Lep");//Including Branch Setting!
+    MyGenParticle VB(mytree,"VB"), W(mytree,"W"), Z(mytree,"Z"), GenJet(mytree,"GenJet"), GenLep(mytree,"GenLep");//Including Branch Setting!
+    //MyParticle    Jet(mytree,"Jet"), Lep(mytree,"Lep");
 
     int n_entries = treeReader->GetEntries();
     for(int entry = 0; entry < n_entries; entry++) {
@@ -36,26 +38,26 @@ int main()
         if (((entry+1) % 100)==0 || entry+1==n_entries)
             cout<<"processing "<<entry+1<<"/"<<n_entries<<'.'<<'\r'<<flush;
         //=== Gen Particle ===//
-        VB.InitCounting(); W.InitCounting(); Z.InitCounting(); Jet.InitCounting(); Lep.InitCounting();
+        VB.InitCounting(); W.InitCounting(); Z.InitCounting(); GenJet.InitCounting(); GenLep.InitCounting();
         for (int idx=0; idx<branchParticle->GetEntries(); idx++) {
-            VB.Init(); W.Init(); Z.Init(); Jet.Init(); Lep.Init();
+            VB.Init(); W.Init(); Z.Init(); GenJet.Init(); GenLep.Init();
             GenParticle *gen = (GenParticle*) branchParticle->At(idx);
             if (gen->Status!=STATUS) continue;
             if (!(abs(gen->PID)==1  || abs(gen->PID)==2  || abs(gen->PID)==3  || abs(gen->PID)==4  || abs(gen->PID)==5  || abs(gen->PID)==6  ||
                   abs(gen->PID)==11 || abs(gen->PID)==13 || abs(gen->PID)==15 || abs(gen->PID)==21 || abs(gen->PID)==23 || abs(gen->PID)==24 )) continue;
-            //=== Lep Jet ===/
+            //=== GenLep GenJet ===/
             if ( abs(gen->PID)==11 || abs(gen->PID)==13 || abs(gen->PID)==15 )
-                RegisterParticleInfo(Lep, gen);
+                RegisterParticleInfo(GenLep, gen);
             if ( abs(gen->PID)==1  || abs(gen->PID)==2  || abs(gen->PID)==3  || abs(gen->PID)==4  || abs(gen->PID)==5  || abs(gen->PID)==6 || abs(gen->PID)==21)
-                RegisterParticleInfo(Jet, gen);
+                RegisterParticleInfo(GenJet, gen);
             //=== VB Z W bonson ===/
             if(abs(gen->PID)==23 || abs(gen->PID)==24) RegisterParticleInfo(VB, gen);
             if(abs(gen->PID)==23) RegisterParticleInfo(Z, gen);
             if(abs(gen->PID)==24) RegisterParticleInfo(W, gen);
             mytree->Fill();
         }
-        RegisterMultiplicity(Lep);
-        RegisterMultiplicity(Jet);
+        RegisterMultiplicity(GenLep);
+        RegisterMultiplicity(GenJet);
         RegisterMultiplicity(VB);
         RegisterMultiplicity(Z);
         RegisterMultiplicity(W);
